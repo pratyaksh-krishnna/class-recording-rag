@@ -32,6 +32,13 @@ describe('loadEnv', () => {
     expect(loadEnv(minimal).ALLOW_GENERAL_KNOWLEDGE_FALLBACK).toBe(true);
   });
 
+  test('defaults booleans to real booleans when the key is absent', () => {
+    const env = loadEnv(minimal);
+    expect(env.DIAGNOSTICS_ENABLED).toBe(false);
+    expect(typeof env.DIAGNOSTICS_ENABLED).toBe('boolean');
+    expect(typeof env.ALLOW_GENERAL_KNOWLEDGE_FALLBACK).toBe('boolean');
+  });
+
   test('fails fast when a required secret is missing', () => {
     expect(() => loadEnv({ DATABASE_URL: minimal.DATABASE_URL })).toThrow(ConfigError);
     expect(() => loadEnv({ OPENAI_API_KEY: minimal.OPENAI_API_KEY })).toThrow(ConfigError);
