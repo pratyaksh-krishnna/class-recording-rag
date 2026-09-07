@@ -1,18 +1,15 @@
 {
   "name": "rag-class-recordings",
-  "module": "index.ts",
-  "type": "module",
   "private": true,
+  "type": "module",
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "migrate": "bun run apps/api/migrations/run.ts",
+    "dev:api": "bun --hot apps/api/src/index.ts",
+    "test": "bun test"
+  },
   "devDependencies": {
     "@types/bun": "latest",
-    "@types/express": "^5.0.6"
-  },
-  "peerDependencies": {
     "typescript": "^5"
-  },
-  "dependencies": {
-    "express": "^5.2.1",
-    "multer": "^2.2.0",
-    "subtitle": "^4.2.2"
   }
 }
