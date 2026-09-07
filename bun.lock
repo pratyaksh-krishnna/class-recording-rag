@@ -6,6 +6,8 @@
       "name": "rag-class-recordings",
       "devDependencies": {
         "@types/bun": "latest",
+        "@types/pg": "^8.23.1",
+        "pg": "^8.23.0",
         "typescript": "^5",
       },
     },

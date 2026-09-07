@@ -32,3 +32,12 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
 # Finder (MacOS) folder config
 .DS_Store
+
+# local transcript corpus (large, not source)
+recordings/
+
+# seed manifest is generated, then hand-edited locally
+seed.manifest.json
+
+# evaluation output
+apps/api/evals/results/
