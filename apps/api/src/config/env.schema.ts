@@ -3,6 +3,10 @@ import { z } from 'zod';
 /** Thrown at boot when configuration is invalid. Never caught — the process exits. */
 export class ConfigError extends Error {
   override readonly name = 'ConfigError';
+
+  constructor(message: string, options?: ErrorOptions) {
+    super(message, options);
+  }
 }
 
 const booleanish = z
