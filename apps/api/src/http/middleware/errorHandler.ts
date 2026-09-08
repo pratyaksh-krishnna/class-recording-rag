@@ -13,20 +13,19 @@ export const notFoundHandler: RequestHandler = (_req, _res, next) => {
  */
 export const errorHandler: ErrorRequestHandler = (error, req, res, _next) => {
   const requestId = req.requestId ?? 'unknown';
-  const { status, body } = toErrorBody(error, requestId);
+  const { status, body, expected } = toErrorBody(error, requestId);
 
-  const expected = isAppError(error);
   const logPayload = {
     status,
     code: body.error.code,
     method: req.method,
     path: req.path,
     ...(expected
-      ? { reason: error.message }
+      ? { reason: (error instanceof Error ? error.message : String(error)) || 'unknown' }
       : { err: error instanceof Error ? { message: error.message, stack: error.stack } : String(error) }),
   };
 
-  if (status >= 500 && !isAppError(error)) {
+  if (status >= 500 && !expected) {
     log().error(logPayload, 'unhandled error');
   } else if (status >= 500) {
     log().error(logPayload, 'request failed');
