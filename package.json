@@ -6,7 +6,8 @@
   "scripts": {
     "migrate": "bun run apps/api/migrations/run.ts",
     "dev:api": "bun --hot apps/api/src/index.ts",
-    "test": "bun test"
+    "test": "bun test",
+    "inspect:chunks": "bun run apps/api/scripts/inspect-chunks.ts"
   },
   "devDependencies": {
     "@types/bun": "latest",
