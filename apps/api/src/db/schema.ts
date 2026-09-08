@@ -18,6 +18,30 @@ import {
  * unique indexes correctly, so migrations stay hand-written and this file
  * follows them. `chunks.tsv` is intentionally omitted — it is generated,
  * never written, and read only through raw SQL in keyword retrieval.
+ *
+ * INTENTIONALLY OMITTED (enforced by the database, not by Drizzle metadata):
+ *
+ * 1. Composite foreign keys and their supporting UNIQUE constraints:
+ *    - classes (module_id, cohort_id) → modules (id, cohort_id)
+ *    - transcripts (class_id, cohort_id) → classes (id, cohort_id)
+ *    - chunks (class_id, cohort_id) → classes (id, cohort_id)
+ *    These make a row with mismatched cohort_id unrepresentable; the guarantee
+ *    is proven by tests/integration/db/schema.test.ts::test 2.
+ *
+ * 2. Partial unique index on transcripts (class_id) WHERE is_active.
+ *    Enforces at most one active transcript per class; verified by test 3.
+ *
+ * 3. HNSW and GIN indexes on chunks (embedding, tsv).
+ *    Drizzle's index() does not support these PostgreSQL-specific index types.
+ *
+ * 4. Generated column chunks.tsv (to_tsvector('english', text)).
+ *    Generated columns are never written and read via raw SQL only.
+ *
+ * Drizzle's foreignKey() is metadata for drizzle-kit's migration generator.
+ * Since migrations stay hand-written, these declarations provide no safety
+ * and would imply drizzle-kit is authoritative over the SQL. If this project
+ * adopts drizzle-kit, these constraints must be added to Drizzle first, or
+ * generated migrations will silently drop them.
  */
 
 export const cohorts = pgTable('cohorts', {
