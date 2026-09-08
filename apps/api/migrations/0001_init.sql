@@ -39,6 +39,9 @@ CREATE TABLE classes (
   updated_at    timestamptz NOT NULL DEFAULT now(),
   UNIQUE (module_id, slug),
   UNIQUE (id, cohort_id),
+  -- enables the composite FKs below, which pin a denormalized module_id to
+  -- the class it claims to belong to
+  UNIQUE (id, module_id),
   FOREIGN KEY (module_id, cohort_id)
     REFERENCES modules (id, cohort_id) ON DELETE CASCADE
 );
@@ -66,7 +69,9 @@ CREATE TABLE transcripts (
   UNIQUE (class_id, content_hash),
   UNIQUE (id, cohort_id),
   FOREIGN KEY (class_id, cohort_id)
-    REFERENCES classes (id, cohort_id) ON DELETE CASCADE
+    REFERENCES classes (id, cohort_id) ON DELETE CASCADE,
+  FOREIGN KEY (class_id, module_id)
+    REFERENCES classes (id, module_id) ON DELETE CASCADE
 );
 CREATE UNIQUE INDEX transcripts_one_active_per_class
   ON transcripts (class_id) WHERE is_active;
@@ -76,7 +81,7 @@ CREATE UNIQUE INDEX transcripts_one_active_per_class
 CREATE TABLE chunks (
   id                     uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   chunk_key              text        NOT NULL UNIQUE,
-  transcript_id          uuid        NOT NULL REFERENCES transcripts(id) ON DELETE CASCADE,
+  transcript_id          uuid        NOT NULL,
   cohort_id              uuid        NOT NULL,
   module_id              uuid        NOT NULL,
   class_id               uuid        NOT NULL,
@@ -99,7 +104,15 @@ CREATE TABLE chunks (
   CHECK (token_count > 0),
   UNIQUE (transcript_id, chunking_version, embedding_model, chunk_index),
   FOREIGN KEY (class_id, cohort_id)
-    REFERENCES classes (id, cohort_id) ON DELETE CASCADE
+    REFERENCES classes (id, cohort_id) ON DELETE CASCADE,
+  -- composite, not a bare transcripts(id) reference: a chunk must not carry a
+  -- valid cohort_id via its class while pointing at another cohort's transcript
+  FOREIGN KEY (transcript_id, cohort_id)
+    REFERENCES transcripts (id, cohort_id) ON DELETE CASCADE,
+  -- the denormalized module_id surfaces to users as Source.moduleId /
+  -- Source.moduleName, so it must agree with the class's actual module
+  FOREIGN KEY (class_id, module_id)
+    REFERENCES classes (id, module_id) ON DELETE CASCADE
 );
 
 CREATE INDEX chunks_embedding_hnsw ON chunks
