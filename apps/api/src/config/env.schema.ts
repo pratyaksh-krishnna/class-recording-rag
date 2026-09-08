@@ -25,6 +25,7 @@ export const EnvSchema = z.object({
   // database
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
   TEST_DATABASE_URL: z.string().optional(),
+  DB_POOL_MAX: positiveInt.default(10),
 
   // openai
   OPENAI_API_KEY: z.string().min(1, 'OPENAI_API_KEY is required'),

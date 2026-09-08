@@ -3,7 +3,7 @@ import { env } from './config';
 import { createPool } from './db/client';
 import { log } from './observability/logger';
 
-const pool = createPool(env.DATABASE_URL);
+const pool = createPool(env.DATABASE_URL, env.DB_POOL_MAX);
 const app = createApp({ pool });
 
 const server = app.listen(env.PORT, () => {
