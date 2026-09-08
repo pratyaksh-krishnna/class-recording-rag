@@ -10,9 +10,14 @@ const server = app.listen(env.PORT, () => {
   log().info({ port: env.PORT, nodeEnv: env.NODE_ENV }, 'api listening');
 });
 
+let shuttingDown = false;
+
 async function shutdown(signal: string): Promise<void> {
+  if (shuttingDown) return;
+  shuttingDown = true;
+
   log().info({ signal }, 'shutting down');
-  server.close();
+  await new Promise<void>((resolve) => server.close(() => resolve()));
   await pool.end();
   process.exit(0);
 }
