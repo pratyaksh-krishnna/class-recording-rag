@@ -2,7 +2,10 @@
   "name": "rag-class-recordings",
   "private": true,
   "type": "module",
-  "workspaces": ["apps/*", "packages/*"],
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "migrate": "bun run apps/api/migrations/run.ts",
     "dev:api": "bun --hot apps/api/src/index.ts",
@@ -12,10 +15,13 @@
   "devDependencies": {
     "@types/bun": "latest",
     "@types/express": "^5.0.6",
+    "@types/multer": "^2.2.0",
     "@types/node": "^26.5.0",
     "@types/pg": "^8.23.1",
     "drizzle-orm": "^0.45.2",
+    "inngest": "^4.20.0",
     "js-tiktoken": "^1.0.21",
+    "multer": "^2.3.0",
     "pg": "^8.23.0",
     "typescript": "^5"
   }
