@@ -17,8 +17,11 @@ export function createApp(deps: AppDependencies): Express {
   const app = express();
 
   app.disable('x-powered-by');
-  app.use(express.json({ limit: '1mb' }));
+  // requestContext runs first so that body-parser failures (malformed or
+  // oversized JSON) are still reported with a real requestId and x-request-id
+  // header, rather than the 'unknown' placeholder.
   app.use(requestContextMiddleware);
+  app.use(express.json({ limit: '1mb' }));
 
   app.use(createHealthRouter(deps.pool));
 

@@ -73,6 +73,42 @@ describeDb('health routes', () => {
     });
   });
 
+  test('rejects a malformed JSON body as a validation error, not a 500', async () => {
+    const app = createApp({ pool });
+    await withTestServer(app, async (baseUrl) => {
+      const res = await fetch(`${baseUrl}/health`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: '{"question": ',
+      });
+      expect(res.status).toBe(400);
+      const body = (await res.json()) as {
+        error: { code: string; message: string; requestId: string };
+      };
+      expect(body.error.code).toBe('VALIDATION_ERROR');
+      expect(body.error.message).toBe('Malformed JSON body.');
+      expect(body.error.requestId).not.toBe('unknown');
+      const serialized = JSON.stringify(body);
+      expect(serialized).not.toContain('stack');
+      expect(serialized).not.toContain('JSON.parse');
+    });
+  });
+
+  test('rejects an oversized JSON body with FILE_TOO_LARGE', async () => {
+    const app = createApp({ pool });
+    await withTestServer(app, async (baseUrl) => {
+      const res = await fetch(`${baseUrl}/health`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ pad: 'x'.repeat(2 * 1024 * 1024) }),
+      });
+      expect(res.status).toBe(413);
+      const body = (await res.json()) as { error: { code: string } };
+      expect(body.error.code).toBe('FILE_TOO_LARGE');
+      expect(JSON.stringify(body)).not.toContain('stack');
+    });
+  });
+
   test('GET /ready fails closed when the database is unreachable', async () => {
     const brokenPool = createPool('postgres://rag:wrong@localhost:5432/rag');
     const app = createApp({ pool: brokenPool });
