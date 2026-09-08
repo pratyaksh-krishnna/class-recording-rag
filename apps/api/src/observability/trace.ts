@@ -24,7 +24,7 @@ export async function span<T>(
   } catch (error) {
     const durationMs = Math.round(performance.now() - startedAt);
     log().error(
-      { span: name, durationMs, err: error instanceof Error ? error.message : String(error) },
+      { span: name, durationMs, errMessage: error instanceof Error ? error.message : String(error) },
       'span failed',
     );
     throw error;
