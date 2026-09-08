@@ -6,6 +6,7 @@
       "name": "rag-class-recordings",
       "devDependencies": {
         "@types/bun": "latest",
+        "@types/express": "^5.0.6",
         "@types/node": "^26.5.0",
         "@types/pg": "^8.23.1",
         "drizzle-orm": "0.45.2",
