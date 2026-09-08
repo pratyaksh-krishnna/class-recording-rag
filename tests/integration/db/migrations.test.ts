@@ -1,6 +1,7 @@
 import { test, expect, describe, beforeAll, afterAll } from 'bun:test';
 import { Client } from 'pg';
 import { runMigrations } from '../../../apps/api/migrations/run';
+import { assertTestDatabase } from '../../helpers/assertTestDatabase';
 
 const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL;
 const describeDb = TEST_DATABASE_URL ? describe : describe.skip;
@@ -10,6 +11,7 @@ describeDb('migrations', () => {
   let client: Client;
 
   beforeAll(async () => {
+    assertTestDatabase(url);
     client = new Client({ connectionString: url });
     await client.connect();
     // Start from a clean slate so the test is meaningful on a re-run.

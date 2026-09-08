@@ -3,6 +3,7 @@ import { runMigrations } from '../../../apps/api/migrations/run';
 import { createPool, closePool } from '../../../apps/api/src/db/client';
 import { createApp } from '../../../apps/api/src/app';
 import { withTestServer } from '../../helpers/testServer';
+import { assertTestDatabase } from '../../helpers/assertTestDatabase';
 import type { Pool } from 'pg';
 
 const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL;
@@ -13,6 +14,7 @@ describeDb('health routes', () => {
   let pool: Pool;
 
   beforeAll(async () => {
+    assertTestDatabase(url);
     await runMigrations(url);
     pool = createPool(url);
   });

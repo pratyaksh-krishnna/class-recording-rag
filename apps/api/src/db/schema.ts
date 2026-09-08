@@ -22,11 +22,19 @@ import {
  * INTENTIONALLY OMITTED (enforced by the database, not by Drizzle metadata):
  *
  * 1. Composite foreign keys and their supporting UNIQUE constraints:
- *    - classes (module_id, cohort_id) → modules (id, cohort_id)
- *    - transcripts (class_id, cohort_id) → classes (id, cohort_id)
- *    - chunks (class_id, cohort_id) → classes (id, cohort_id)
- *    These make a row with mismatched cohort_id unrepresentable; the guarantee
- *    is proven by tests/integration/db/schema.test.ts::test 2.
+ *    - classes     (module_id, cohort_id)    → modules     (id, cohort_id)
+ *    - transcripts (class_id, cohort_id)     → classes     (id, cohort_id)
+ *    - transcripts (class_id, module_id)     → classes     (id, module_id)
+ *    - chunks      (class_id, cohort_id)     → classes     (id, cohort_id)
+ *    - chunks      (class_id, module_id)     → classes     (id, module_id)
+ *    - chunks      (transcript_id, cohort_id) → transcripts (id, cohort_id)
+ *    supported by UNIQUE (id, cohort_id) on modules, classes and transcripts,
+ *    and UNIQUE (id, module_id) on classes.
+ *    These make a row with a mismatched cohort_id or a denormalized module_id
+ *    that disagrees with its class unrepresentable. `chunks.transcriptId` carries
+ *    no .references() below for the same reason `classes.cohortId` does not: it
+ *    is one leg of a composite FK, not a single-column one.
+ *    The guarantees are proven by tests/integration/db/schema.test.ts.
  *
  * 2. Partial unique index on transcripts (class_id) WHERE is_active.
  *    Enforces at most one active transcript per class; verified by test 3.
@@ -117,7 +125,7 @@ export const chunks = pgTable(
   {
     id: uuid('id').primaryKey().defaultRandom(),
     chunkKey: text('chunk_key').notNull().unique(),
-    transcriptId: uuid('transcript_id').notNull().references(() => transcripts.id, { onDelete: 'cascade' }),
+    transcriptId: uuid('transcript_id').notNull(),
     cohortId: uuid('cohort_id').notNull(),
     moduleId: uuid('module_id').notNull(),
     classId: uuid('class_id').notNull(),

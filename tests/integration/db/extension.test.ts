@@ -1,5 +1,6 @@
-import { test, expect, describe, afterAll } from 'bun:test';
+import { test, expect, describe, beforeAll, afterAll } from 'bun:test';
 import { Client } from 'pg';
+import { assertTestDatabase } from '../../helpers/assertTestDatabase';
 
 const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL;
 const describeDb = TEST_DATABASE_URL ? describe : describe.skip;
@@ -7,6 +8,11 @@ const describeDb = TEST_DATABASE_URL ? describe : describe.skip;
 describeDb('postgres container', () => {
   const client = new Client({ connectionString: TEST_DATABASE_URL });
   let connected = false;
+
+  // CREATE EXTENSION below is a write, so this file is guarded too.
+  beforeAll(() => {
+    assertTestDatabase(TEST_DATABASE_URL as string);
+  });
 
   afterAll(async () => {
     if (connected) await client.end();
