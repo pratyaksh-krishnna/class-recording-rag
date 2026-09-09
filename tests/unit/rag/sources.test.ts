@@ -52,12 +52,36 @@ describe('toSources', () => {
       moduleName: 'Module One',
       classId: 'cl-1',
       className: 'Class One',
-      startTime: '00:00:01',
-      endTime: '00:00:02',
+      startTime: '00:01',
+      endTime: '00:02',
       startMs: 100,
       endMs: 200,
       excerpt: 'short text',
     });
+  });
+
+  test('a zero hour component is dropped from the display time (spec §16.1)', () => {
+    const evidence = mapOf(
+      entry({ sourceId: 'SOURCE_1', startTime: '00:12:31', endTime: '00:14:42' }),
+    );
+
+    const [source] = toSources(['SOURCE_1'], evidence);
+
+    expect(source!.startTime).toBe('12:31');
+    expect(source!.endTime).toBe('14:42');
+  });
+
+  test('an hour past the first is kept, unpadded, while the evidence map itself keeps full HH:MM:SS', () => {
+    const evidence = mapOf(
+      entry({ sourceId: 'SOURCE_1', startTime: '01:02:31', endTime: '01:04:42' }),
+    );
+
+    const [source] = toSources(['SOURCE_1'], evidence);
+
+    expect(source!.startTime).toBe('1:02:31');
+    expect(source!.endTime).toBe('1:04:42');
+    // the map entry itself is untouched — still full zero-padded HH:MM:SS
+    expect(evidence.get('SOURCE_1')!.startTime).toBe('01:02:31');
   });
 
   test('an id absent from the evidence map is skipped, not guessed', () => {

@@ -12,6 +12,20 @@ function excerpt(text: string): string {
 }
 
 /**
+ * The evidence map (and the rendered context block, spec §12.2) keep full
+ * zero-padded 'HH:MM:SS' — that's what the model reads and what the map is
+ * keyed by. But `Source.startTime`/`endTime` are documented display strings
+ * (spec §16.1: '12:31'), so the API's copy drops a leading zero hour rather
+ * than showing '00:12:31'. An hour past the first is kept, unpadded
+ * ('1:02:31'), never dropped.
+ */
+function displayTime(hhmmss: string): string {
+  const [hours, minutes, seconds] = hhmmss.split(':');
+  if (hours === undefined || minutes === undefined || seconds === undefined) return hhmmss;
+  return Number(hours) === 0 ? `${minutes}:${seconds}` : `${Number(hours)}:${minutes}:${seconds}`;
+}
+
+/**
  * Resolves validated `[SOURCE_N]` markers to the API's `Source` contract.
  * Every field is read out of the evidence map — built from database rows —
  * never from anything the model produced; an id absent from the map (a
@@ -34,8 +48,8 @@ export function toSources(sourceIds: string[], evidence: EvidenceMap): Source[] 
       moduleName: entry.moduleName,
       classId: entry.classId,
       className: entry.className,
-      startTime: entry.startTime,
-      endTime: entry.endTime,
+      startTime: displayTime(entry.startTime),
+      endTime: displayTime(entry.endTime),
       startMs: entry.startMs,
       endMs: entry.endMs,
       excerpt: excerpt(entry.text),
