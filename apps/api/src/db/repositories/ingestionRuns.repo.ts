@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 import type { Database } from '../client';
 import { ingestionRuns } from '../schema';
 
@@ -94,5 +94,24 @@ export async function updateRunStatus(
 
 export async function findRunById(db: Database, id: string): Promise<IngestionRunRow | null> {
   const [row] = await db.select().from(ingestionRuns).where(eq(ingestionRuns.id, id));
+  return row ?? null;
+}
+
+/**
+ * A transcript can be ingested more than once (a retried upload, a reindex),
+ * so "the run" for a transcript means the newest one — the run whose status
+ * the caller polling `GET /api/transcripts/:id` actually means. Returns null
+ * when the transcript has no run yet, which is a valid state, not an error.
+ */
+export async function findLatestRunByTranscriptId(
+  db: Database,
+  transcriptId: string,
+): Promise<IngestionRunRow | null> {
+  const [row] = await db
+    .select()
+    .from(ingestionRuns)
+    .where(eq(ingestionRuns.transcriptId, transcriptId))
+    .orderBy(desc(ingestionRuns.startedAt))
+    .limit(1);
   return row ?? null;
 }
