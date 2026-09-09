@@ -1,7 +1,7 @@
 import { test, expect, describe, afterEach } from 'bun:test';
 import { createFileTranscriptSource } from '../../../apps/api/src/ingestion/source';
 import { AppError } from '../../../apps/api/src/errors/AppError';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
@@ -140,4 +140,21 @@ describe('createFileTranscriptSource', () => {
       expect(error.message).toBe('Transcript source path is outside the allowed roots.');
     }
   });
+
+test('rejects a symlink inside an allowed root that points outside it', async () => {
+  // resolve() alone cannot catch this: the path is textually inside the root
+  // and only the real path reveals the escape.
+  const root = mkdtempSync(join(tmpdir(), 'source-root-'));
+  const outside = mkdtempSync(join(tmpdir(), 'source-outside-'));
+  const secret = join(outside, 'secret.srt');
+  writeFileSync(secret, 'classified');
+  const link = join(root, 'innocent.srt');
+  symlinkSync(secret, link);
+
+  const source = createFileTranscriptSource([root]);
+  await expect(source.read(link)).rejects.toThrow(/outside the allowed roots/);
+
+  rmSync(root, { recursive: true, force: true });
+  rmSync(outside, { recursive: true, force: true });
+});
 });
