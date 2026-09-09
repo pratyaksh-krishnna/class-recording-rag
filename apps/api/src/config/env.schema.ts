@@ -14,6 +14,8 @@ const booleanish = z
   .transform((value) => value === 'true');
 
 const reasoningEffort = z.enum(['none', 'low', 'medium', 'high', 'xhigh', 'max']);
+/** Shared with LLMRequest['reasoningEffort'] (provider.ts) — one definition, not two drifting copies. */
+export type ReasoningEffort = z.infer<typeof reasoningEffort>;
 
 const port = z.coerce.number().int().min(1).max(65535);
 const positiveInt = z.coerce.number().int().positive();
