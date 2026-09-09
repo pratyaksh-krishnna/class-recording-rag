@@ -40,6 +40,14 @@ export async function upsertModule(db: Database, input: UpsertModuleInput): Prom
   return row;
 }
 
+export async function findModuleById(db: Database, id: string): Promise<{ id: string; slug: string } | null> {
+  const [row] = await db
+    .select({ id: modules.id, slug: modules.slug })
+    .from(modules)
+    .where(eq(modules.id, id));
+  return row ?? null;
+}
+
 /**
  * Powers the catalog endpoint (spec §16.2). Two queries rather than a join so
  * a module with zero classes still appears, with an empty `classes` array.

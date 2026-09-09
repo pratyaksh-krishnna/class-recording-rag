@@ -11,7 +11,8 @@
     "dev:api": "bun --hot apps/api/src/index.ts",
     "test": "bun test",
     "inspect:chunks": "bun run apps/api/scripts/inspect-chunks.ts",
-    "seed:manifest": "bun run apps/api/scripts/build-manifest.ts"
+    "seed:manifest": "bun run apps/api/scripts/build-manifest.ts",
+    "seed:transcripts": "bun run apps/api/scripts/seed-transcripts.ts"
   },
   "devDependencies": {
     "@types/bun": "latest",
