@@ -2,10 +2,15 @@ import express, { type Express } from 'express';
 import { serve } from 'inngest/express';
 import type { Pool } from 'pg';
 import type { Database } from './db/client';
+import type { RagConfig } from './config/rag';
+import type { LLMProvider } from './providers/llm/provider';
+import type { EmbeddingProvider } from './providers/embedding/provider';
+import type { Tokenizer } from './ingestion/tokenizer/tokenizer';
 import { requestContextMiddleware } from './http/middleware/requestContext';
 import { errorHandler, notFoundHandler } from './http/middleware/errorHandler';
 import { createHealthRouter } from './http/routes/health.routes';
 import { createCatalogRouter } from './http/routes/catalog.routes';
+import { createChatRouter } from './http/routes/chat.routes';
 import {
   createTranscriptsRouter,
   type InngestEventSender,
@@ -35,6 +40,11 @@ export interface AppDependencies {
   /** Root directory transcript uploads are written under. */
   uploadsDir?: string;
   transcriptsConfig?: TranscriptsRouterConfig;
+  /** Used by POST /api/chat and GET /api/conversations(/:id). */
+  llm?: LLMProvider;
+  embeddings?: EmbeddingProvider;
+  tokenizer?: Tokenizer;
+  ragConfig?: RagConfig;
 }
 
 /**
@@ -71,6 +81,18 @@ export function createApp(deps: AppDependencies): Express {
 
   if (deps.db) {
     app.use(createCatalogRouter(deps.db));
+  }
+
+  if (deps.db && deps.llm && deps.embeddings && deps.tokenizer && deps.ragConfig) {
+    app.use(
+      createChatRouter({
+        db: deps.db,
+        llm: deps.llm,
+        embeddings: deps.embeddings,
+        tokenizer: deps.tokenizer,
+        config: deps.ragConfig,
+      }),
+    );
   }
 
   if (deps.inngestServe) {

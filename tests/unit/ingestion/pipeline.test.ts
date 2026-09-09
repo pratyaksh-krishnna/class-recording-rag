@@ -82,6 +82,11 @@ function createFakeSource(sourceContent: Partial<TranscriptSourceContent> = {}):
 // Default test config
 function createTestConfig(): RagConfig {
   return {
+    llm: {
+      model: 'gpt-5.6-luna',
+      timeoutMs: 60_000,
+      reasoningEffort: { contextualizer: 'low', planner: 'low', judge: 'medium', answer: 'medium' },
+    },
     chunking: {
       version: 'v1',
       targetTokens: 500,

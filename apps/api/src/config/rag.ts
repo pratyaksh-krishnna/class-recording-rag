@@ -1,6 +1,16 @@
-import { ConfigError, type Env } from './env.schema';
+import { ConfigError, type Env, type ReasoningEffort } from './env.schema';
 
 export interface RagConfig {
+  llm: {
+    model: string;
+    timeoutMs: number;
+    reasoningEffort: {
+      contextualizer: ReasoningEffort;
+      planner: ReasoningEffort;
+      judge: ReasoningEffort;
+      answer: ReasoningEffort;
+    };
+  };
   chunking: {
     version: string;
     targetTokens: number;
@@ -52,6 +62,16 @@ export function buildRagConfig(env: Env): RagConfig {
   }
 
   return {
+    llm: {
+      model: env.LLM_MODEL,
+      timeoutMs: env.LLM_TIMEOUT_MS,
+      reasoningEffort: {
+        contextualizer: env.LLM_REASONING_EFFORT_CONTEXTUALIZER,
+        planner: env.LLM_REASONING_EFFORT_PLANNER,
+        judge: env.LLM_REASONING_EFFORT_JUDGE,
+        answer: env.LLM_REASONING_EFFORT_ANSWER,
+      },
+    },
     chunking: {
       version: env.CHUNKING_VERSION,
       targetTokens: env.CHUNK_TARGET_TOKENS,
