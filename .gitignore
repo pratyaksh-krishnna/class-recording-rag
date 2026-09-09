@@ -40,4 +40,8 @@ recordings/
 seed.manifest.json
 
 # evaluation output
-apps/api/evals/results/
+apps/api/evals/results/*.json
+
+# markdown notes: skills, agent instructions, plans and specs stay local
+*.md
+!README.md

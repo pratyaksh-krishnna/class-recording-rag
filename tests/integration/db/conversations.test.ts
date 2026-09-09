@@ -15,6 +15,7 @@ import {
   listMessages,
   saveCitations,
   listMessagesWithCitations,
+  listMessagesWithHydratedSources,
   touchConversation,
 } from '../../../apps/api/src/db/repositories/conversations.repo';
 import type { Pool } from 'pg';
@@ -213,6 +214,52 @@ describeDb('conversations repository', () => {
         'SELECT count(*)::int AS count FROM message_citations WHERE message_id = $1', [assistantMsg.id],
       );
       expect(after.rows[0]?.count).toBe(0);
+    });
+  });
+
+  describe('listMessagesWithHydratedSources', () => {
+    test('hydrates citations into full Source objects in rank order', async () => {
+      const conv = await createConversation(db, { cohortId, userId: 'hydrate-user', title: null });
+      await appendMessage(db, { conversationId: conv.id, role: 'user', content: 'Question' });
+      const assistantMsg = await appendMessage(db, {
+        conversationId: conv.id,
+        role: 'assistant',
+        content: 'Answer with two sources',
+        groundingStatus: 'course_grounded',
+        citations: [
+          { sourceId: 'SOURCE_1', chunkId: chunkIdA },
+          { sourceId: 'SOURCE_2', chunkId: chunkIdB },
+        ],
+      });
+
+      const messages = await listMessagesWithHydratedSources(db, conv.id, cohortId);
+      expect(messages).toHaveLength(2);
+      expect(messages[0]?.sources).toEqual([]);
+      expect(messages[1]?.id).toBe(assistantMsg.id);
+      expect(messages[1]?.sources.map((s) => s.id)).toEqual(['SOURCE_1', 'SOURCE_2']);
+      expect(messages[1]?.sources[0]?.moduleName).toBe('Conv Module');
+      expect(messages[1]?.sources[0]?.className).toBe('Conv Class');
+      expect(messages[1]?.sources[0]?.excerpt.length).toBeGreaterThan(0);
+      expect(messages[1]?.sources[0]?.startMs).toBe(0);
+      expect(messages[1]?.sources[1]?.startMs).toBe(1000);
+    });
+
+    test('drops chunks that no longer resolve inside the cohort', async () => {
+      const otherCohort = await upsertCohort(db, { slug: 'conv-hydrate-other', name: 'Other' });
+      const conv = await createConversation(db, { cohortId, userId: 'drop-user', title: null });
+      await appendMessage(db, {
+        conversationId: conv.id,
+        role: 'assistant',
+        content: 'Answer',
+        groundingStatus: 'course_grounded',
+        citations: [{ sourceId: 'SOURCE_1', chunkId: chunkIdA }],
+      });
+
+      const inCohort = await listMessagesWithHydratedSources(db, conv.id, cohortId);
+      expect(inCohort[0]?.sources).toHaveLength(1);
+
+      const wrongCohort = await listMessagesWithHydratedSources(db, conv.id, otherCohort.id);
+      expect(wrongCohort[0]?.sources).toEqual([]);
     });
   });
 

@@ -14,7 +14,12 @@ import { createDeterministicEmbeddingProvider } from '../../../apps/api/src/prov
 import { createScriptedLLMProvider } from '../../../apps/api/src/providers/llm/scripted.mock';
 import { createTokenizer } from '../../../apps/api/src/ingestion/tokenizer/tokenizer';
 import type { RagConfig } from '../../../apps/api/src/config/rag';
-import type { ChatResponse, ApiErrorBody } from '../../../packages/shared/src/contracts';
+import type {
+  ApiErrorBody,
+  ChatResponse,
+  ConversationDetailResponse,
+  ConversationListResponse,
+} from '../../../packages/shared/src/contracts';
 
 const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL;
 const describeDb = TEST_DATABASE_URL ? describe : describe.skip;
@@ -261,17 +266,20 @@ describeDb('chat routes', () => {
         headers: chatHeaders('user-2', cohortAId),
       });
       expect(getRes.status).toBe(200);
-      const conversation = (await getRes.json()) as { conversationId: string; messages: Array<{ role: string; citations: unknown[] }> };
+      const conversation = (await getRes.json()) as ConversationDetailResponse;
       expect(conversation.messages.length).toBe(4);
       expect(conversation.messages.filter((m) => m.role === 'user').length).toBe(2);
       expect(conversation.messages.filter((m) => m.role === 'assistant').length).toBe(2);
       const assistantMessages = conversation.messages.filter((m) => m.role === 'assistant');
-      expect(assistantMessages.every((m) => m.citations.length > 0)).toBe(true);
+      expect(assistantMessages.every((m) => m.sources.length > 0)).toBe(true);
+      expect(conversation.messages.filter((m) => m.role === 'user').every((m) => m.sources.length === 0)).toBe(true);
+      expect(conversation.messages.every((m) => typeof m.createdAt === 'string' && !Number.isNaN(Date.parse(m.createdAt)))).toBe(true);
 
       const listRes = await fetch(`${baseUrl}/api/conversations`, { headers: chatHeaders('user-2', cohortAId) });
       expect(listRes.status).toBe(200);
-      const listing = (await listRes.json()) as { conversations: Array<{ id: string }> };
+      const listing = (await listRes.json()) as ConversationListResponse;
       expect(listing.conversations.some((c) => c.id === first.conversationId)).toBe(true);
+      expect(listing.conversations.every((c) => typeof c.createdAt === 'string' && typeof c.updatedAt === 'string')).toBe(true);
     });
   });
 
@@ -310,6 +318,79 @@ describeDb('chat routes', () => {
       const body = (await res.json()) as ApiErrorBody;
       expect(body.error.code).toBe('CONVERSATION_NOT_FOUND');
       expect(JSON.stringify(body)).not.toContain('stack');
+    });
+  });
+
+  test('GET /api/conversations/:id returns hydrated Source objects ordered by citation rank', async () => {
+    const llm = createScriptedLLMProvider({
+      query_plan: [QUERY_PLAN],
+      evidence_assessment: [SUFFICIENT_JUDGE],
+      answer: [VALID_ANSWER],
+    });
+    const app = buildApp(llm);
+    await withTestServer(app, async (baseUrl) => {
+      const chatRes = await fetch(`${baseUrl}/api/chat`, {
+        method: 'POST',
+        headers: chatHeaders('hydrate-user', cohortAId),
+        body: JSON.stringify({ question: 'What is normalization?' }),
+      });
+      expect(chatRes.status).toBe(200);
+      const chat = (await chatRes.json()) as ChatResponse;
+
+      const getRes = await fetch(`${baseUrl}/api/conversations/${chat.conversationId}`, {
+        headers: chatHeaders('hydrate-user', cohortAId),
+      });
+      expect(getRes.status).toBe(200);
+      const detail = (await getRes.json()) as ConversationDetailResponse;
+
+      const userMsg = detail.messages.find((m) => m.role === 'user');
+      expect(userMsg?.sources).toEqual([]);
+
+      const assistantMsg = detail.messages.find((m) => m.role === 'assistant');
+      expect(assistantMsg?.sources.length).toBeGreaterThan(0);
+      const source = assistantMsg!.sources[0]!;
+      expect(source.id).toBe('SOURCE_1');
+      expect(source.chunkId).toBe(chunkIds['chat-a:norm']!);
+      expect(source.moduleName).toBe('Module A');
+      expect(source.className).toBe('Class A');
+      expect(source.startTime).toBe('00:00');
+      expect(source.endTime).toBe('00:05');
+      expect(source.startMs).toBe(0);
+      expect(source.endMs).toBe(5000);
+      expect(source.excerpt.length).toBeGreaterThan(0);
+      expect(typeof assistantMsg!.createdAt).toBe('string');
+    });
+  });
+
+  test('GET /api/conversations/:id returns 404 when scoped to a different user or cohort', async () => {
+    const llm = createScriptedLLMProvider({
+      query_plan: [QUERY_PLAN],
+      evidence_assessment: [SUFFICIENT_JUDGE],
+      answer: [VALID_ANSWER],
+    });
+    const app = buildApp(llm);
+    await withTestServer(app, async (baseUrl) => {
+      const chatRes = await fetch(`${baseUrl}/api/chat`, {
+        method: 'POST',
+        headers: chatHeaders('isolation-user', cohortAId),
+        body: JSON.stringify({ question: 'What is normalization?' }),
+      });
+      expect(chatRes.status).toBe(200);
+      const chat = (await chatRes.json()) as ChatResponse;
+
+      const wrongUser = await fetch(`${baseUrl}/api/conversations/${chat.conversationId}`, {
+        headers: chatHeaders('someone-else', cohortAId),
+      });
+      expect(wrongUser.status).toBe(404);
+      const wrongUserBody = (await wrongUser.json()) as ApiErrorBody;
+      expect(wrongUserBody.error.code).toBe('CONVERSATION_NOT_FOUND');
+
+      const wrongCohort = await fetch(`${baseUrl}/api/conversations/${chat.conversationId}`, {
+        headers: chatHeaders('isolation-user', cohortBId),
+      });
+      expect(wrongCohort.status).toBe(404);
+      const wrongCohortBody = (await wrongCohort.json()) as ApiErrorBody;
+      expect(wrongCohortBody.error.code).toBe('CONVERSATION_NOT_FOUND');
     });
   });
 

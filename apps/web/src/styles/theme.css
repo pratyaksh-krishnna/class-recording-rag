@@ -1,0 +1,222 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ground:     #E3E6E0;
+  --color-page:       #FCFCFA;
+  --color-ink:        #191D1A;
+  --color-graphite:   #59605B;
+  --color-rule:       #C8CFC8;
+  --color-mark:       #0E5C55;
+
+  --color-g-course:   #1D6B47;
+  --color-g-partial:  #96650F;
+  --color-g-general:  #5A6560;
+  --color-g-conflict: #664095;
+
+  --font-reading: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --font-ui:      Archivo, "Helvetica Neue", Arial, sans-serif;
+
+  /* Type scale — 1.25 modular from 16px (plan §A.4) */
+  --text-xs:   0.8rem;
+  --text-sm:   1rem;
+  --text-base: 1.125rem;
+  --text-lg:   1.25rem;
+  --text-xl:   1.5625rem;
+  --text-2xl:  1.95rem;
+
+  /* Layout spacing (plan §A.5) */
+  --spacing-container: 1320px;
+  --spacing-gap:       48px;
+  --spacing-rail-min:  320px;
+  --spacing-rail-max:  380px;
+
+  /* Two-column reading + rail; collapses below 1080px (plan §A.5) */
+  --breakpoint-split: 1080px;
+}
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  * {
+    margin: 0;
+  }
+
+  body {
+    min-height: 100dvh;
+    background-color: var(--color-ground);
+    color: var(--color-ink);
+    font-family: var(--font-ui);
+    font-size: var(--text-sm);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Timecodes use tabular-nums via the `tabular-nums` utility in components. */
+
+  :focus-visible {
+    outline: 2px solid var(--color-mark);
+    outline-offset: 2px;
+  }
+
+  button,
+  a,
+  textarea {
+    font: inherit;
+    color: inherit;
+    touch-action: manipulation;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+/*
+ * The one bold element (plan §A.6): provenance rules encode grounding through
+ * colour and texture. Defined here so components never duplicate the treatments.
+ */
+@layer components {
+  /* Full-bleed shell: base padding plus notch/home-indicator insets. */
+  .app-shell {
+    padding-top: max(0.75rem, env(safe-area-inset-top));
+    padding-right: max(0.75rem, env(safe-area-inset-right));
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+    padding-left: max(0.75rem, env(safe-area-inset-left));
+  }
+
+  @media (width >= 1080px) {
+    .app-shell {
+      padding-top: max(1.25rem, env(safe-area-inset-top));
+      padding-right: max(1.5rem, env(safe-area-inset-right));
+      padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+      padding-left: max(1.5rem, env(safe-area-inset-left));
+    }
+  }
+
+  .rule-course {
+    background-color: var(--color-g-course);
+  }
+
+  .rule-partial {
+    background-color: var(--color-g-partial);
+  }
+
+  .rule-general {
+    background-image: repeating-linear-gradient(
+      to bottom,
+      var(--color-g-general) 0,
+      var(--color-g-general) 6px,
+      transparent 6px,
+      transparent 10px
+    );
+  }
+
+  .rule-conflict {
+    background-image: linear-gradient(
+      to bottom,
+      var(--color-g-conflict) 0,
+      var(--color-g-conflict) 1px,
+      transparent 1px,
+      transparent 2px,
+      var(--color-g-conflict) 2px,
+      var(--color-g-conflict) 3px
+    );
+  }
+
+  @keyframes rule-draw-down {
+    from {
+      transform: scaleY(0);
+    }
+    to {
+      transform: scaleY(1);
+    }
+  }
+
+  .rule-animate {
+    transform-origin: top;
+    animation: rule-draw-down 320ms ease-out forwards;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .rule-animate {
+      animation: none;
+      transform: scaleY(1);
+    }
+  }
+
+  /* 8 % grounding tints over --page (plan §A.3). color-mix cannot be a utility. */
+  .tint-course {
+    background-color: color-mix(in srgb, var(--color-g-course) 8%, var(--color-page));
+  }
+
+  .tint-partial {
+    background-color: color-mix(in srgb, var(--color-g-partial) 8%, var(--color-page));
+  }
+
+  .tint-general {
+    background-color: color-mix(in srgb, var(--color-g-general) 8%, var(--color-page));
+  }
+
+  .tint-conflict {
+    background-color: color-mix(in srgb, var(--color-g-conflict) 8%, var(--color-page));
+  }
+
+  @keyframes answer-fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  .answer-fade {
+    animation: answer-fade-in 320ms ease-out forwards;
+  }
+
+  @keyframes evidence-tint {
+    0%,
+    55% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+    }
+  }
+
+  /* Opacity overlay so the 1.2s tint (plan §A.7) never animates background-color. */
+  .evidence-flash {
+    position: relative;
+  }
+
+  .evidence-flash::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-color: color-mix(in srgb, var(--color-mark) 12%, transparent);
+    pointer-events: none;
+    animation: evidence-tint 1.2s ease-out forwards;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .answer-fade {
+      animation: none;
+      opacity: 1;
+    }
+
+    .evidence-flash::after {
+      animation: none;
+      opacity: 0;
+    }
+  }
+}

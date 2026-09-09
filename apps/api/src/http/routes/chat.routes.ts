@@ -1,7 +1,8 @@
+import type { ConversationDetailResponse, ConversationListResponse } from '@rag/shared';
 import { Router } from 'express';
 import { AppError } from '../../errors/AppError';
 import { answerQuestion, type OrchestratorDeps } from '../../rag/orchestrator';
-import { findConversation, listConversations, listMessagesWithCitations } from '../../db/repositories/conversations.repo';
+import { findConversation, listConversations, listMessagesWithHydratedSources } from '../../db/repositories/conversations.repo';
 import { requireCohortContext } from '../middleware/requireCohortContext';
 import { ChatRequestSchema, ConversationIdParamSchema } from '../validation/chat';
 
@@ -49,8 +50,19 @@ export function createChatRouter(deps: OrchestratorDeps): Router {
         throw new AppError('CONVERSATION_NOT_FOUND', 'Conversation not found.');
       }
 
-      const messages = await listMessagesWithCitations(deps.db, conversation.id);
-      res.status(200).json({ conversationId: conversation.id, messages });
+      const rows = await listMessagesWithHydratedSources(deps.db, conversation.id, req.cohortId);
+      const body: ConversationDetailResponse = {
+        conversationId: conversation.id,
+        messages: rows.map((m) => ({
+          id: m.id,
+          role: m.role,
+          content: m.content,
+          groundingStatus: m.groundingStatus,
+          createdAt: m.createdAt.toISOString(),
+          sources: m.sources,
+        })),
+      };
+      res.status(200).json(body);
     } catch (error) {
       next(error);
     }
@@ -58,8 +70,18 @@ export function createChatRouter(deps: OrchestratorDeps): Router {
 
   router.get('/api/conversations', requireCohortContext, async (req, res, next) => {
     try {
-      const conversations = await listConversations(deps.db, { userId: req.userId, cohortId: req.cohortId });
-      res.status(200).json({ conversations });
+      const rows = await listConversations(deps.db, { userId: req.userId, cohortId: req.cohortId });
+      const body: ConversationListResponse = {
+        conversations: rows.map((c) => ({
+          id: c.id,
+          cohortId: c.cohortId,
+          userId: c.userId,
+          title: c.title,
+          createdAt: c.createdAt.toISOString(),
+          updatedAt: c.updatedAt.toISOString(),
+        })),
+      };
+      res.status(200).json(body);
     } catch (error) {
       next(error);
     }

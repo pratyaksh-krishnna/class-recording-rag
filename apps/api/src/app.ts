@@ -7,6 +7,7 @@ import type { LLMProvider } from './providers/llm/provider';
 import type { EmbeddingProvider } from './providers/embedding/provider';
 import type { Tokenizer } from './ingestion/tokenizer/tokenizer';
 import { requestContextMiddleware } from './http/middleware/requestContext';
+import { createCorsMiddleware } from './http/middleware/cors';
 import { errorHandler, notFoundHandler } from './http/middleware/errorHandler';
 import { createHealthRouter } from './http/routes/health.routes';
 import { createCatalogRouter } from './http/routes/catalog.routes';
@@ -45,6 +46,8 @@ export interface AppDependencies {
   embeddings?: EmbeddingProvider;
   tokenizer?: Tokenizer;
   ragConfig?: RagConfig;
+  /** Browser origins allowed to call this API. Omitted means same-origin only. */
+  corsAllowedOrigins?: string[];
 }
 
 /**
@@ -60,6 +63,11 @@ export function createApp(deps: AppDependencies): Express {
   // oversized JSON) are still reported with a real requestId and x-request-id
   // header, rather than the 'unknown' placeholder.
   app.use(requestContextMiddleware);
+  // Ahead of the body parser: a preflight carries no body and must be answered
+  // even for requests the parser would later reject.
+  if (deps.corsAllowedOrigins) {
+    app.use(createCorsMiddleware(deps.corsAllowedOrigins));
+  }
   app.use(express.json({ limit: '1mb' }));
 
   app.use(createHealthRouter(deps.pool));

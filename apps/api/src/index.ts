@@ -1,3 +1,4 @@
+import { mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { createApp } from './app';
 import { env, ragConfig } from './config';
@@ -19,6 +20,10 @@ const db = createDb(pool);
 const repoRoot = resolve(import.meta.dir, '..', '..', '..');
 const recordingsRoot = resolve(repoRoot, 'recordings');
 const uploadsDir = resolve(repoRoot, 'uploads');
+
+// Created at boot so the first upload does not fail on a missing directory,
+// and so the ingestion source has a real path to resolve it against.
+await mkdir(uploadsDir, { recursive: true });
 
 // A pure constructor: no request is made until pipeline.embeddings.embed()
 // is actually called from inside an Inngest step, so boot never blocks on
@@ -70,6 +75,7 @@ const app = createApp({
   embeddings,
   tokenizer,
   ragConfig,
+  corsAllowedOrigins: env.CORS_ALLOWED_ORIGINS,
 });
 
 const server = app.listen(env.PORT, () => {

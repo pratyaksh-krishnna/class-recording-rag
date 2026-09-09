@@ -1,10 +1,12 @@
 import type { Source } from '@rag/shared';
+import type { HydratedChunk } from '../../db/repositories/chunks.repo';
+import { formatTimestamp } from './contextBuilder';
 import type { EvidenceMap } from './contextBuilder';
 
 const EXCERPT_MAX_CHARS = 240;
 
 /** First ~240 chars for the evidence card, cut at a word boundary (spec §16.1). */
-function excerpt(text: string): string {
+export function excerpt(text: string): string {
   if (text.length <= EXCERPT_MAX_CHARS) return text;
   const cut = text.slice(0, EXCERPT_MAX_CHARS);
   const lastSpace = cut.lastIndexOf(' ');
@@ -19,10 +21,64 @@ function excerpt(text: string): string {
  * than showing '00:12:31'. An hour past the first is kept, unpadded
  * ('1:02:31'), never dropped.
  */
-function displayTime(hhmmss: string): string {
+export function displayTime(hhmmss: string): string {
   const [hours, minutes, seconds] = hhmmss.split(':');
   if (hours === undefined || minutes === undefined || seconds === undefined) return hhmmss;
   return Number(hours) === 0 ? `${minutes}:${seconds}` : `${Number(hours)}:${minutes}:${seconds}`;
+}
+
+interface SourceFields {
+  chunkId: string;
+  transcriptId: string;
+  moduleId: string;
+  moduleName: string;
+  classId: string;
+  className: string;
+  startMs: number;
+  endMs: number;
+  text: string;
+  /** Evidence-map HH:MM:SS; when omitted, derived from `startMs`/`endMs`. */
+  startTimeHms?: string;
+  endTimeHms?: string;
+}
+
+function buildSourceFields(sourceId: string, fields: SourceFields): Source {
+  const startTimeHms = fields.startTimeHms ?? formatTimestamp(fields.startMs);
+  const endTimeHms = fields.endTimeHms ?? formatTimestamp(fields.endMs);
+  return {
+    id: sourceId,
+    chunkId: fields.chunkId,
+    transcriptId: fields.transcriptId,
+    moduleId: fields.moduleId,
+    moduleName: fields.moduleName,
+    classId: fields.classId,
+    className: fields.className,
+    startTime: displayTime(startTimeHms),
+    endTime: displayTime(endTimeHms),
+    startMs: fields.startMs,
+    endMs: fields.endMs,
+    excerpt: excerpt(fields.text),
+  };
+}
+
+/**
+ * Builds a `Source` from a hydrated database row. Both the live chat path
+ * and `GET /api/conversations/:id` must call this — if either path formats
+ * timestamps or excerpts differently, a reloaded conversation would disagree
+ * with the live turn (spec §12.3).
+ */
+export function buildSource(sourceId: string, chunk: HydratedChunk): Source {
+  return buildSourceFields(sourceId, {
+    chunkId: chunk.id,
+    transcriptId: chunk.transcriptId,
+    moduleId: chunk.moduleId,
+    moduleName: chunk.moduleName,
+    classId: chunk.classId,
+    className: chunk.className,
+    startMs: chunk.startMs,
+    endMs: chunk.endMs,
+    text: chunk.text,
+  });
 }
 
 /**
@@ -40,20 +96,21 @@ export function toSources(sourceIds: string[], evidence: EvidenceMap): Source[] 
     const entry = evidence.get(sourceId);
     if (entry === undefined) continue;
 
-    sources.push({
-      id: entry.sourceId,
-      chunkId: entry.chunkId,
-      transcriptId: entry.transcriptId,
-      moduleId: entry.moduleId,
-      moduleName: entry.moduleName,
-      classId: entry.classId,
-      className: entry.className,
-      startTime: displayTime(entry.startTime),
-      endTime: displayTime(entry.endTime),
-      startMs: entry.startMs,
-      endMs: entry.endMs,
-      excerpt: excerpt(entry.text),
-    });
+    sources.push(
+      buildSourceFields(entry.sourceId, {
+        chunkId: entry.chunkId,
+        text: entry.text,
+        startMs: entry.startMs,
+        endMs: entry.endMs,
+        startTimeHms: entry.startTime,
+        endTimeHms: entry.endTime,
+        transcriptId: entry.transcriptId,
+        classId: entry.classId,
+        className: entry.className,
+        moduleId: entry.moduleId,
+        moduleName: entry.moduleName,
+      }),
+    );
   }
 
   return sources;

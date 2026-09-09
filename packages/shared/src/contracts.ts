@@ -44,6 +44,12 @@ export interface Diagnostics {
   queries: { label: string; text: string }[];
   retrieval: RetrievalDiagnostic[];
   fusedCount: number;
+  /**
+   * Chunk ids after RRF and exact-id dedup, in fused rank order — the list spec
+   * §19.2 scores retrieval against. Diagnostics-only: it is never shown to a
+   * user and is absent unless DIAGNOSTICS_ENABLED.
+   */
+  fusedChunkIds: string[];
   contextChunkCount: number;
   contextTokens: number;
   judgeVerdict: string;
@@ -65,6 +71,66 @@ export interface ChatResponse {
   groundingStatus: GroundingStatus;
   sources: Source[];
   diagnostics?: Diagnostics;
+}
+
+/** One row in the conversation sidebar / history list (spec §16.2). */
+export interface ConversationSummary {
+  id: string;
+  cohortId: string;
+  userId: string;
+  title: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Response body for `GET /api/conversations` (spec §16.2). */
+export interface ConversationListResponse {
+  conversations: ConversationSummary[];
+}
+
+/** A single persisted turn when reloading a conversation (spec §16.2). */
+export interface ConversationMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  groundingStatus: GroundingStatus | null;
+  createdAt: string;
+  /** Hydrated evidence entries for assistant turns; always `[]` for user turns. */
+  sources: Source[];
+}
+
+/** Response body for `GET /api/conversations/:id` (spec §16.2). */
+export interface ConversationDetailResponse {
+  conversationId: string;
+  messages: ConversationMessage[];
+}
+
+export interface CatalogClass {
+  id: string;
+  slug: string;
+  name: string;
+  position: number;
+}
+
+export interface CatalogModule {
+  id: string;
+  slug: string;
+  name: string;
+  position: number;
+  classes: CatalogClass[];
+}
+
+/**
+ * Response body for `GET /api/cohorts/:cohortId/catalog` (spec §16.2) — the
+ * modules and classes the UI browses. Never handed to the query planner:
+ * spec §9 keeps the 87 class titles away from query formulation so the planner
+ * cannot bias toward titles that happen to match the question's wording.
+ */
+export interface CatalogResponse {
+  cohortId: string;
+  cohortSlug: string;
+  cohortName: string;
+  modules: CatalogModule[];
 }
 
 export type ApiErrorCode =

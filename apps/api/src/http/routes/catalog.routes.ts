@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import type { CatalogResponse } from '@rag/shared';
 import type { Database } from '../../db/client';
 import { findCohortById } from '../../db/repositories/cohorts.repo';
 import { listModulesWithClasses } from '../../db/repositories/modules.repo';
@@ -31,7 +32,15 @@ export function createCatalogRouter(db: Database): Router {
       }
 
       const modules = await listModulesWithClasses(db, cohortId);
-      res.status(200).json({ cohortId: cohort.id, modules });
+      // cohortName is here so the UI masthead names the cohort from the
+      // database rather than from a client-side constant that could drift.
+      const body: CatalogResponse = {
+        cohortId: cohort.id,
+        cohortSlug: cohort.slug,
+        cohortName: cohort.name,
+        modules,
+      };
+      res.status(200).json(body);
     } catch (error) {
       next(error);
     }

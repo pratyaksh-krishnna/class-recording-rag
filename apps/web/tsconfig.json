@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx"
+  },
+  // The root config excludes apps/web so server code never sees the DOM lib.
+  // Override it here, or this project would exclude its own sources.
+  "exclude": [],
+  // The web unit tests live in the repo-wide tests/ tree but import DOM-aware
+  // sources, so they belong to this project rather than the root one.
+  "include": ["src/**/*", "../../tests/unit/web/**/*"]
+}

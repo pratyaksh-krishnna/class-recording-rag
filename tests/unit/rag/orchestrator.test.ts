@@ -195,6 +195,8 @@ describe('answerQuestion', () => {
     expect(onResponse.diagnostics).toBeDefined();
     expect(onResponse.diagnostics?.judgeVerdict).toBe('sufficient');
     expect(onResponse.diagnostics?.fusedCount).toBe(2);
+    // RRF tie-break is chunkId asc (spec §11) → chunk-1 before chunk-2.
+    expect(onResponse.diagnostics?.fusedChunkIds).toEqual(['chunk-1', 'chunk-2']);
     expect(onResponse.diagnostics?.latencyMs.total).toBeGreaterThanOrEqual(0);
 
     const providerOff = createScriptedLLMProvider({

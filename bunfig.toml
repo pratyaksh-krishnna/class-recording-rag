@@ -1,0 +1,8 @@
+[serve.static]
+# Bun.serve() loads bunfig from the repo root, so the plugin is a root
+# devDependency — a path into apps/web/node_modules would break the moment the
+# workspace hoisting layout changed.
+plugins = ["bun-plugin-tailwind"]
+# Security boundary (spec §21): Bun's default is `disable`; only PUBLIC_* vars
+# may be inlined into the client bundle — nothing else reaches the browser.
+env = "PUBLIC_*"

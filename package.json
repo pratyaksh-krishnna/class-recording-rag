@@ -9,10 +9,12 @@
   "scripts": {
     "migrate": "bun run apps/api/migrations/run.ts",
     "dev:api": "bun --hot apps/api/src/index.ts",
+    "dev:web": "bun --hot apps/web/src/server.ts",
     "test": "bun test",
     "inspect:chunks": "bun run apps/api/scripts/inspect-chunks.ts",
     "seed:manifest": "bun run apps/api/scripts/build-manifest.ts",
-    "seed:transcripts": "bun run apps/api/scripts/seed-transcripts.ts"
+    "seed:transcripts": "bun run apps/api/scripts/seed-transcripts.ts",
+    "eval": "bun run apps/api/evals/run.ts"
   },
   "devDependencies": {
     "@types/bun": "latest",
@@ -20,11 +22,17 @@
     "@types/multer": "^2.2.0",
     "@types/node": "^26.5.0",
     "@types/pg": "^8.23.1",
+    "bun-plugin-tailwind": "^0.1.2",
     "drizzle-orm": "^0.45.2",
     "inngest": "^4.20.0",
+    "inngest-cli": "^1.44.0",
     "js-tiktoken": "^1.0.21",
     "multer": "^2.3.0",
     "pg": "^8.23.0",
+    "tailwindcss": "^4.3.3",
     "typescript": "^5"
-  }
+  },
+  "trustedDependencies": [
+    "inngest-cli"
+  ]
 }

@@ -141,6 +141,32 @@ describe('createFileTranscriptSource', () => {
     }
   });
 
+  test('reads from an existing root even when another allowed root does not exist', async () => {
+    // Regression: uploads/ does not exist until the first upload, and resolving
+    // every root in one Promise.all made that absent root reject the batch, so
+    // every transcript under recordings/ failed as NOT_FOUND and all ingestion
+    // silently stopped.
+    tempDir = mkdtempSync(join(tmpdir(), 'source-test-'));
+    const filePath = join(tempDir, 'test.txt');
+    writeFileSync(filePath, 'content');
+    const absentRoot = join(tempDir, 'never-created');
+
+    const source = createFileTranscriptSource([absentRoot, tempDir]);
+
+    expect((await source.read(filePath)).content).toBe('content');
+  });
+
+  test('rejects everything when every allowed root is absent', async () => {
+    tempDir = mkdtempSync(join(tmpdir(), 'source-test-'));
+    const filePath = join(tempDir, 'test.txt');
+    writeFileSync(filePath, 'content');
+
+    // Tolerating absent roots must not degrade into tolerating *no* roots.
+    const source = createFileTranscriptSource([join(tempDir, 'absent-a'), join(tempDir, 'absent-b')]);
+
+    await expect(source.read(filePath)).rejects.toThrow(/outside the allowed roots/);
+  });
+
 test('rejects a symlink inside an allowed root that points outside it', async () => {
   // resolve() alone cannot catch this: the path is textually inside the root
   // and only the real path reveals the escape.

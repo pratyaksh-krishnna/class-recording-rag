@@ -1,0 +1,16 @@
+{
+  "name": "@rag/web",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@rag/shared": "workspace:*",
+    "bun-plugin-tailwind": "^0.1.2",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "tailwindcss": "^4.3.3"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0"
+  }
+}

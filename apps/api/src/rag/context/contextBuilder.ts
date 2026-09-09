@@ -37,7 +37,7 @@ function pad2(n: number): string {
 }
 
 /** ms since chunk/class start → 'HH:MM:SS', per the rendered block (spec §12.2). */
-function formatTimestamp(ms: number): string {
+export function formatTimestamp(ms: number): string {
   const totalSeconds = Math.floor(ms / 1000);
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);

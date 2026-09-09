@@ -10,4 +10,11 @@ import { Inngest } from 'inngest';
  */
 export const inngest = new Inngest({
   id: 'rag-class-recordings',
+  // Inngest v4 assumes cloud mode and rejects every unsigned request with a
+  // 500, so `serve()` never registers against the local dev server. Spec §22
+  // deliberately leaves INNGEST_SIGNING_KEY unset outside production, which
+  // makes "not production" exactly the condition for dev mode. Read from
+  // process.env rather than config/env so that importing this client from a
+  // test does not drag in full environment validation.
+  isDev: process.env.NODE_ENV !== 'production',
 });

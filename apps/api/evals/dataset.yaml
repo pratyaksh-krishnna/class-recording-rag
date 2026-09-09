@@ -1,0 +1,279 @@
+# Ground truth in this file is AWAITING USER REVIEW.
+# Only someone who knows the mobile-dev course can validate expectedClassSlugs,
+# expectedChunkKeys, and expectedGrounding. Treat every entry as a draft until
+# reviewed against the actual transcripts (spec §19.1).
+
+- id: factual-001
+  category: factual
+  question: "What is mobile development?"
+  priorTurns: []
+  expectedClassSlugs:
+    - "01-what-is-mobile-development"
+  expectedChunkKeys: []
+  expectedGrounding: course_grounded
+  notes: "Module 1, introductory definition of mobile development."
+
+- id: factual-002
+  category: factual
+  question: "What is the difference between React Native and Expo?"
+  priorTurns: []
+  expectedClassSlugs:
+    - "02-react-native-vs-expo"
+  expectedChunkKeys: []
+  expectedGrounding: course_grounded
+  notes: "Module 1, React Native vs Expo comparison."
+
+- id: factual-003
+  category: factual
+  question: "How do you create your first Expo project?"
+  priorTurns: []
+  expectedClassSlugs:
+    - "03-setting-up-env-creating-first-expo-project"
+  expectedChunkKeys: []
+  expectedGrounding: course_grounded
+  notes: "Module 1, environment setup and first project."
+
+- id: factual-004
+  category: factual
+  question: "What does the gyroscope sensor measure?"
+  priorTurns: []
+  expectedClassSlugs:
+    - "2-understanding-the-gyroscope-the-secret-behind-motion-orientation"
+  expectedChunkKeys: []
+  expectedGrounding: course_grounded
+  notes: "Module 7, gyroscope fundamentals."
+
+- id: followup-001
+  category: followup
+  question: "Why does that matter for mobile apps?"
+  priorTurns:
+    - role: user
+      content: "What does the gyroscope sensor measure?"
+    - role: assistant
+      content: "The gyroscope measures how quickly the device rotates around each axis."
+  expectedClassSlugs:
+    - "2-understanding-the-gyroscope-the-secret-behind-motion-orientation"
+  expectedChunkKeys: []
+  expectedGrounding: course_grounded
+  notes: "Follow-up on gyroscope; contextualizer should resolve 'that'."
+
+- id: followup-002
+  category: followup
+  question: "How is it different from the accelerometer?"
+  priorTurns:
+    - role: user
+      content: "What does the gyroscope sensor measure?"
+    - role: assistant
+      content: "The gyroscope measures rotational velocity around each axis."
+  expectedClassSlugs:
+    - "2-understanding-the-gyroscope-the-secret-behind-motion-orientation"
+    - "01-introduction-of-expo-sensor-and-accelerometer"
+  expectedChunkKeys: []
+  expectedGrounding: course_grounded
+  notes: "Follow-up comparing gyroscope and accelerometer."
+
+- id: followup-003
+  category: followup
+  question: "Can you show me how to navigate between those screens?"
+  priorTurns:
+    - role: user
+      content: "How do I set up React Navigation in an Expo app?"
+    - role: assistant
+      content: "You install the React Navigation packages and wrap your app in a NavigationContainer."
+  expectedClassSlugs:
+    - "3-navigation-between-screens"
+  expectedChunkKeys: []
+  expectedGrounding: course_grounded
+  notes: "Follow-up on navigation setup; 'those screens' refers to prior topic."
+
+- id: multi-class-001
+  category: multi_class
+  question: "What core components do I need to build a profile card gallery?"
+  priorTurns: []
+  expectedClassSlugs:
+    - "05-profile-card-gallery"
+    - "02-essential-core-componentsview-text-image-textinput-pressable-stylesheet"
+  expectedChunkKeys: []
+  expectedGrounding: course_grounded
+  notes: "Module 2 mini-project plus core components overview."
+
+- id: multi-class-002
+  category: multi_class
+  question: "How was the Pokemon list screen implemented in the mini project?"
+  priorTurns: []
+  expectedClassSlugs:
+    - "mini-project-5-implementing-pokemonlist-screen"
+    - "mini-project-3-implementing-homescreen-add-other-components"
+  expectedChunkKeys: []
+  expectedGrounding: course_grounded
+  notes: "Module 3 mini-project spans list and home screens."
+
+- id: multi-class-003
+  category: multi_class
+  question: "What do I need to know about tab navigation and drawer navigation?"
+  priorTurns: []
+  expectedClassSlugs:
+    - "5-navigation-patterns-tab-modal-drawer"
+    - "9-tab-navigation"
+    - "10-drawer-navigation"
+  expectedChunkKeys: []
+  expectedGrounding: course_grounded
+  notes: "Navigation patterns across React Navigation and Expo Router modules."
+
+- id: multi-class-004
+  category: multi_class
+  question: "How do AsyncStorage and SecureStore differ for persisting data?"
+  priorTurns: []
+  expectedClassSlugs:
+    - "1-react-native-async-storage"
+    - "2-expo-secure-store"
+  expectedChunkKeys: []
+  expectedGrounding: course_grounded
+  notes: "Module 6 storage options."
+
+- id: cross-module-001
+  category: cross_module
+  question: "How do I fetch data from an API and display it in a FlatList?"
+  priorTurns: []
+  expectedClassSlugs:
+    - "3-consuming-external-apis"
+    - "04-list-data-display-components"
+  expectedChunkKeys: []
+  expectedGrounding: course_grounded
+  notes: "Module 5 APIs plus Module 2 list components."
+
+- id: cross-module-002
+  category: cross_module
+  question: "How do I protect routes after setting up Expo Router?"
+  priorTurns: []
+  expectedClassSlugs:
+    - "1-introduction-to-expo-router"
+    - "chapter-1-auth-in-expo-protected-routes-and-auth-flow"
+  expectedChunkKeys: []
+  expectedGrounding: course_grounded
+  notes: "Expo Router basics plus auth protected routes."
+
+- id: cross-module-003
+  category: cross_module
+  question: "How can I use device sensors in a game built with navigation?"
+  priorTurns: []
+  expectedClassSlugs:
+    - "6-tilt-the-ball-game-mini-project"
+    - "3-navigation-between-screens"
+  expectedChunkKeys: []
+  expectedGrounding: course_grounded
+  notes: "Module 7 tilt game plus Module 3 navigation."
+
+- id: unanswerable-001
+  category: unanswerable
+  question: "What is the time complexity of the quicksort algorithm?"
+  priorTurns: []
+  expectedClassSlugs: []
+  expectedChunkKeys: []
+  expectedGrounding: general_knowledge
+  notes: "Computer-science algorithms — outside the mobile-dev corpus."
+
+- id: unanswerable-002
+  category: unanswerable
+  question: "Who discovered penicillin?"
+  priorTurns: []
+  expectedClassSlugs: []
+  expectedChunkKeys: []
+  expectedGrounding: general_knowledge
+  notes: "General history — not covered in course recordings."
+
+- id: unanswerable-003
+  category: unanswerable
+  question: "What is the chemical formula for water?"
+  priorTurns: []
+  expectedClassSlugs: []
+  expectedChunkKeys: []
+  expectedGrounding: general_knowledge
+  notes: "Basic chemistry — plainly outside mobile development."
+
+- id: unanswerable-004
+  category: unanswerable
+  question: "How do you implement a binary search tree in C++?"
+  priorTurns: []
+  expectedClassSlugs: []
+  expectedChunkKeys: []
+  expectedGrounding: general_knowledge
+  notes: "C++ data structures — not part of this React Native cohort."
+
+- id: ambiguous-001
+  category: ambiguous
+  question: "How do I navigate in my app?"
+  priorTurns: []
+  expectedClassSlugs:
+    - "1-introduction-to-navigation-in-react-native"
+    - "1-introduction-to-expo-router"
+  expectedChunkKeys: []
+  expectedGrounding: course_grounded
+  notes: "Could mean React Navigation or Expo Router — multiple valid classes."
+
+- id: ambiguous-002
+  category: ambiguous
+  question: "How do I store data locally?"
+  priorTurns: []
+  expectedClassSlugs:
+    - "1-react-native-async-storage"
+    - "3-expo-sqllite-creating-basic-crud-app"
+    - "4-expo-file-system"
+  expectedChunkKeys: []
+  expectedGrounding: course_grounded
+  notes: "AsyncStorage, SQLite, and file system are all plausible answers."
+
+- id: ambiguous-003
+  category: ambiguous
+  question: "How do I build the app for production?"
+  priorTurns: []
+  expectedClassSlugs:
+    - "1-what-is-eas-build-why-you-need-it-dev-builds-vs-expo-go"
+    - "03-how-to-publish-your-app-to-google-playstore-and-app-store"
+  expectedChunkKeys: []
+  expectedGrounding: course_grounded
+  notes: "EAS build vs publishing — overlapping production topics."
+
+- id: conflicting-001
+  category: conflicting
+  question: "Does Expo Go support every native module and sensor the course uses?"
+  priorTurns: []
+  expectedClassSlugs:
+    - "1-what-is-eas-build-why-you-need-it-dev-builds-vs-expo-go"
+    - "01-introduction-of-expo-sensor-and-accelerometer"
+  expectedChunkKeys: []
+  expectedGrounding: conflicting
+  notes: "Expo Go limitations vs sensor demos may surface tension."
+
+- id: conflicting-002
+  category: conflicting
+  question: "Should I use React Navigation or Expo Router for a new project?"
+  priorTurns: []
+  expectedClassSlugs:
+    - "1-introduction-to-navigation-in-react-native"
+    - "1-introduction-to-expo-router"
+  expectedChunkKeys: []
+  expectedGrounding: conflicting
+  notes: "Two navigation stacks taught — answer may reflect disagreement."
+
+- id: conflicting-003
+  category: conflicting
+  question: "Is AsyncStorage secure enough for storing user passwords?"
+  priorTurns: []
+  expectedClassSlugs:
+    - "1-react-native-async-storage"
+    - "2-expo-secure-store"
+  expectedChunkKeys: []
+  expectedGrounding: conflicting
+  notes: "AsyncStorage vs SecureStore guidance may conflict on sensitive data."
+
+- id: conflicting-004
+  category: conflicting
+  question: "Do I need a development build or can Expo Go handle camera and microphone?"
+  priorTurns: []
+  expectedClassSlugs:
+    - "1-getting-started-with-expo-camera-setup-permissions-first-capture"
+    - "1-what-is-eas-build-why-you-need-it-dev-builds-vs-expo-go"
+  expectedChunkKeys: []
+  expectedGrounding: conflicting
+  notes: "Camera permissions vs Expo Go capability limits."

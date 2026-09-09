@@ -26,5 +26,13 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false
-  }
+  },
+
+  // apps/web is its own TypeScript project: it needs the DOM lib, which the
+  // API must NOT have — a server file referencing `window` should be a compile
+  // error here, not a runtime crash in production. tests/unit/web is excluded
+  // with it because those tests import web sources, and an excluded file is
+  // still type-checked when something inside the program imports it.
+  // Both are covered by `tsc -p apps/web`; run both projects in CI.
+  "exclude": ["apps/web", "tests/unit/web"]
 }

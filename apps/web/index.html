@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#E3E6E0" />
+    <title>Course Recordings</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      html {
+        color-scheme: light;
+      }
+    </style>
+    <!-- Bun inlines PUBLIC_* only when they are set at bundle time. Unset vars
+         remain as process.env.*; the browser has no process. An empty env
+         object lets env.ts fall through to its documented defaults. -->
+    <script>
+      if (typeof process === "undefined") {
+        globalThis.process = { env: {} };
+      }
+    </script>
+    <script type="module" src="./src/main.tsx"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

@@ -1,7 +1,9 @@
-import type { GroundingStatus } from '@rag/shared';
+import type { GroundingStatus, Source } from '@rag/shared';
 import { and, asc, desc, eq, inArray } from 'drizzle-orm';
+import { buildSource } from '../../rag/context/sources';
 import type { Database } from '../client';
 import { conversations, messageCitations, messages } from '../schema';
+import { hydrateChunksByIds } from './chunks.repo';
 
 
 export interface ConversationRow {
@@ -220,6 +222,91 @@ export async function listMessagesWithCitations(
   }
 
   return msgs.map((m) => ({ ...m, citations: citationsByMessageId.get(m.id) ?? [] }));
+}
+
+export interface MessageWithSources {
+  id: string;
+  conversationId: string;
+  role: 'user' | 'assistant';
+  content: string;
+  groundingStatus: GroundingStatus | null;
+  createdAt: Date;
+  sources: Source[];
+}
+
+/**
+ * Reloads a conversation with fully hydrated evidence entries (spec §12.3):
+ * citation rows supply only `(chunkId, sourceId)`; every display field comes
+ * from `hydrateChunksByIds`, the same path the orchestrator uses. One batched
+ * hydration for the whole conversation — not one query per message — keeps
+ * reload latency bounded and guarantees formatting stays in one code path.
+ * Chunks that no longer resolve inside `cohortId` are dropped, not rendered
+ * as holes; citation `rank` ordering is preserved per message.
+ */
+export async function listMessagesWithHydratedSources(
+  db: Database,
+  conversationId: string,
+  cohortId: string,
+): Promise<MessageWithSources[]> {
+  const msgs = await listMessages(db, conversationId);
+  if (msgs.length === 0) return [];
+
+  const citationRows = await db
+    .select({
+      messageId: messageCitations.messageId,
+      chunkId: messageCitations.chunkId,
+      sourceId: messageCitations.sourceId,
+    })
+    .from(messageCitations)
+    .where(inArray(messageCitations.messageId, msgs.map((m) => m.id)))
+    .orderBy(asc(messageCitations.rank));
+
+  const citationsByMessageId = new Map<string, CitationInput[]>();
+  for (const row of citationRows) {
+    const bucket = citationsByMessageId.get(row.messageId);
+    const entry = { chunkId: row.chunkId, sourceId: row.sourceId };
+    if (bucket) {
+      bucket.push(entry);
+    } else {
+      citationsByMessageId.set(row.messageId, [entry]);
+    }
+  }
+
+  const uniqueChunkIds = [...new Set(citationRows.map((r) => r.chunkId))];
+  const hydrated = await hydrateChunksByIds(db, uniqueChunkIds, cohortId);
+  const chunkById = new Map(hydrated.map((c) => [c.id, c]));
+
+  return msgs.map((m) => {
+    if (m.role === 'user') {
+      return {
+        id: m.id,
+        conversationId: m.conversationId,
+        role: m.role,
+        content: m.content,
+        groundingStatus: m.groundingStatus,
+        createdAt: m.createdAt,
+        sources: [],
+      };
+    }
+
+    const citations = citationsByMessageId.get(m.id) ?? [];
+    const sources: Source[] = [];
+    for (const citation of citations) {
+      const chunk = chunkById.get(citation.chunkId);
+      if (chunk === undefined) continue;
+      sources.push(buildSource(citation.sourceId, chunk));
+    }
+
+    return {
+      id: m.id,
+      conversationId: m.conversationId,
+      role: m.role,
+      content: m.content,
+      groundingStatus: m.groundingStatus,
+      createdAt: m.createdAt,
+      sources,
+    };
+  });
 }
 
 /** Bumps updated_at so listConversations sorts this conversation first. */

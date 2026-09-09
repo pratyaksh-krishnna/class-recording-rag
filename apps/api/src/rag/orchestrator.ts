@@ -244,6 +244,8 @@ export async function answerQuestion(
         queries: planResult.queries.map((q) => ({ label: q.label, text: q.text })),
         retrieval: hybridResult.diagnostics,
         fusedCount: deduped.length,
+        // Post-RRF rank order for eval harness retrieval metrics (spec §19.2).
+        fusedChunkIds: deduped.map((chunk) => chunk.chunkId),
         contextChunkCount: builtContext.includedChunkIds.length,
         contextTokens: builtContext.contextTokens,
         judgeVerdict: assessment.verdict,
