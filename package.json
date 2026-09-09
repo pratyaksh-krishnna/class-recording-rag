@@ -10,7 +10,8 @@
     "migrate": "bun run apps/api/migrations/run.ts",
     "dev:api": "bun --hot apps/api/src/index.ts",
     "test": "bun test",
-    "inspect:chunks": "bun run apps/api/scripts/inspect-chunks.ts"
+    "inspect:chunks": "bun run apps/api/scripts/inspect-chunks.ts",
+    "seed:manifest": "bun run apps/api/scripts/build-manifest.ts"
   },
   "devDependencies": {
     "@types/bun": "latest",
