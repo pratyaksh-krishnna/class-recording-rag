@@ -41,6 +41,24 @@ export interface AnswerQuestionInput {
   conversationId?: string;
 }
 
+export const MAX_THREAD_TITLE_LENGTH = 72;
+
+/**
+ * Produces a compact, deterministic thread title from the first question.
+ * Keeping this local avoids an extra LLM call just to name a conversation.
+ */
+export function deriveThreadTitle(question: string): string {
+  const normalized = question.trim().replace(/\s+/g, ' ');
+  if (normalized.length <= MAX_THREAD_TITLE_LENGTH) return normalized;
+
+  const availableLength = MAX_THREAD_TITLE_LENGTH - 1;
+  const candidate = normalized.slice(0, availableLength);
+  const cutFallsInsideWord = normalized[availableLength] !== ' ';
+  const lastWordBoundary = cutFallsInsideWord ? candidate.lastIndexOf(' ') : -1;
+  const truncated = lastWordBoundary > 0 ? candidate.slice(0, lastWordBoundary) : candidate;
+  return `${truncated.trimEnd()}…`;
+}
+
 /**
  * Resolves the conversation for this turn (spec §1.2 step 1). Scoped by
  * BOTH userId and cohortId — never by id alone — so a guessed or shared
@@ -50,10 +68,14 @@ export interface AnswerQuestionInput {
  */
 async function resolveConversationId(
   db: Database,
-  input: { conversationId: string | undefined; userId: string; cohortId: string },
+  input: { conversationId: string | undefined; userId: string; cohortId: string; question: string },
 ): Promise<string> {
   if (input.conversationId === undefined) {
-    const created = await createConversation(db, { cohortId: input.cohortId, userId: input.userId });
+    const created = await createConversation(db, {
+      cohortId: input.cohortId,
+      userId: input.userId,
+      title: deriveThreadTitle(input.question),
+    });
     return created.id;
   }
 
@@ -87,6 +109,7 @@ export async function answerQuestion(
     conversationId: input.conversationId,
     userId,
     cohortId,
+    question,
   });
 
   const baseContext = getRequestContext() ?? { requestId: 'unknown' };

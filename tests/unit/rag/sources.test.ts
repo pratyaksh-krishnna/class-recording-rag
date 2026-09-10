@@ -57,6 +57,7 @@ describe('toSources', () => {
       startMs: 100,
       endMs: 200,
       excerpt: 'short text',
+      content: 'short text',
     });
   });
 
@@ -116,6 +117,17 @@ describe('toSources', () => {
     const [source] = toSources(['SOURCE_1'], evidence);
 
     expect(source!.excerpt).toBe('a short excerpt');
+    expect(source!.content).toBe('a short excerpt');
+  });
+
+  test('keeps the complete chunk while the card excerpt remains truncated', () => {
+    const longText = new Array(50).fill('complete chunk content').join(' ');
+    const evidence = mapOf(entry({ sourceId: 'SOURCE_1', text: longText }));
+
+    const [source] = toSources(['SOURCE_1'], evidence);
+
+    expect(source!.excerpt.length).toBeLessThanOrEqual(240);
+    expect(source!.content).toBe(longText);
   });
 
   test('output order follows the given sourceIds array, not map insertion order', () => {

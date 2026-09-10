@@ -1,7 +1,7 @@
 import type { ConversationDetailResponse, ConversationListResponse } from '@rag/shared';
 import { Router } from 'express';
 import { AppError } from '../../errors/AppError';
-import { answerQuestion, type OrchestratorDeps } from '../../rag/orchestrator';
+import { answerQuestion, deriveThreadTitle, type OrchestratorDeps } from '../../rag/orchestrator';
 import { findConversation, listConversations, listMessagesWithHydratedSources } from '../../db/repositories/conversations.repo';
 import { requireCohortContext } from '../middleware/requireCohortContext';
 import { ChatRequestSchema, ConversationIdParamSchema } from '../validation/chat';
@@ -76,7 +76,7 @@ export function createChatRouter(deps: OrchestratorDeps): Router {
           id: c.id,
           cohortId: c.cohortId,
           userId: c.userId,
-          title: c.title,
+          title: c.title ?? (c.firstUserQuestion ? deriveThreadTitle(c.firstUserQuestion) : null),
           createdAt: c.createdAt.toISOString(),
           updatedAt: c.updatedAt.toISOString(),
         })),

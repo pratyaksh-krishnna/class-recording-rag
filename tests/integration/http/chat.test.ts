@@ -10,6 +10,12 @@ import { upsertModule } from '../../../apps/api/src/db/repositories/modules.repo
 import { upsertClass } from '../../../apps/api/src/db/repositories/classes.repo';
 import { upsertTranscript } from '../../../apps/api/src/db/repositories/transcripts.repo';
 import { bulkInsertChunks, setChunkEmbeddings, type ChunkInsert } from '../../../apps/api/src/db/repositories/chunks.repo';
+import {
+  appendMessage,
+  createConversation,
+  findConversation,
+} from '../../../apps/api/src/db/repositories/conversations.repo';
+import { deriveThreadTitle } from '../../../apps/api/src/rag/orchestrator';
 import { createDeterministicEmbeddingProvider } from '../../../apps/api/src/providers/embedding/deterministic.mock';
 import { createScriptedLLMProvider } from '../../../apps/api/src/providers/llm/scripted.mock';
 import { createTokenizer } from '../../../apps/api/src/ingestion/tokenizer/tokenizer';
@@ -281,6 +287,35 @@ describeDb('chat routes', () => {
       expect(listing.conversations.some((c) => c.id === first.conversationId)).toBe(true);
       expect(listing.conversations.every((c) => typeof c.createdAt === 'string' && typeof c.updatedAt === 'string')).toBe(true);
     });
+  });
+
+  test('GET /api/conversations derives legacy null titles without changing stored titles', async () => {
+    const userId = 'legacy-title-http-user';
+    const firstQuestion =
+      '  Explain   how database normalization reduces duplication while preserving data integrity across related tables  ';
+    const legacy = await createConversation(db, { cohortId: cohortAId, userId, title: null });
+    await appendMessage(db, { conversationId: legacy.id, role: 'user', content: firstQuestion });
+    const named = await createConversation(db, { cohortId: cohortAId, userId, title: 'Keep this stored title' });
+    await appendMessage(db, { conversationId: named.id, role: 'user', content: 'A different first question' });
+
+    const app = buildApp(createScriptedLLMProvider({}));
+    await withTestServer(app, async (baseUrl) => {
+      const response = await fetch(`${baseUrl}/api/conversations`, {
+        headers: chatHeaders(userId, cohortAId),
+      });
+      expect(response.status).toBe(200);
+
+      const body = (await response.json()) as ConversationListResponse;
+      expect(body.conversations.find((conversation) => conversation.id === legacy.id)?.title).toBe(
+        deriveThreadTitle(firstQuestion),
+      );
+      expect(body.conversations.find((conversation) => conversation.id === named.id)?.title).toBe(
+        'Keep this stored title',
+      );
+    });
+
+    const storedLegacy = await findConversation(db, legacy.id, { userId, cohortId: cohortAId });
+    expect(storedLegacy?.title).toBeNull();
   });
 
   test('a cohort A caller never receives cohort B content, even with matching wording', async () => {

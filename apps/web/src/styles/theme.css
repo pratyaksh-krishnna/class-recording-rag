@@ -1,20 +1,22 @@
 @import "tailwindcss";
 
 @theme {
-  --color-ground:     #E3E6E0;
-  --color-page:       #FCFCFA;
-  --color-ink:        #191D1A;
-  --color-graphite:   #59605B;
-  --color-rule:       #C8CFC8;
-  --color-mark:       #0E5C55;
+  --color-ground:     #F1F2ED;
+  --color-page:       #FBFCF9;
+  --color-ink:        #202321;
+  --color-graphite:   #6F7571;
+  --color-rule:       #E2E5DF;
+  --color-mark:       #167E74;
+  --color-mark-soft:  #E4F1EE;
+  --color-panel:      #F6F7F3;
 
-  --color-g-course:   #1D6B47;
-  --color-g-partial:  #96650F;
-  --color-g-general:  #5A6560;
-  --color-g-conflict: #664095;
+  --color-g-course:   #167E74;
+  --color-g-partial:  #A26E1B;
+  --color-g-general:  #68716C;
+  --color-g-conflict: #76519A;
 
-  --font-reading: "Source Serif 4", Georgia, "Times New Roman", serif;
-  --font-ui:      Archivo, "Helvetica Neue", Arial, sans-serif;
+  --font-reading: "Plus Jakarta Sans", Avenir, "Segoe UI", sans-serif;
+  --font-ui:      "Plus Jakarta Sans", Avenir, "Segoe UI", sans-serif;
 
   /* Type scale — 1.25 modular from 16px (plan §A.4) */
   --text-xs:   0.8rem;
@@ -25,8 +27,8 @@
   --text-2xl:  1.95rem;
 
   /* Layout spacing (plan §A.5) */
-  --spacing-container: 1320px;
-  --spacing-gap:       48px;
+  --spacing-container: 1440px;
+  --spacing-gap:       40px;
   --spacing-rail-min:  320px;
   --spacing-rail-max:  380px;
 
@@ -51,8 +53,14 @@
     color: var(--color-ink);
     font-family: var(--font-ui);
     font-size: var(--text-sm);
-    line-height: 1.5;
+    line-height: 1.55;
     -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--color-mark) 20%, transparent);
+    color: var(--color-ink);
   }
 
   /* Timecodes use tabular-nums via the `tabular-nums` utility in components. */
@@ -68,6 +76,14 @@
     font: inherit;
     color: inherit;
     touch-action: manipulation;
+  }
+
+  button {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -86,21 +102,29 @@
  * colour and texture. Defined here so components never duplicate the treatments.
  */
 @layer components {
-  /* Full-bleed shell: base padding plus notch/home-indicator insets. */
+  /* Full-bleed shell: safe-area aware without placing a frame around the app. */
   .app-shell {
-    padding-top: max(0.75rem, env(safe-area-inset-top));
-    padding-right: max(0.75rem, env(safe-area-inset-right));
-    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
-    padding-left: max(0.75rem, env(safe-area-inset-left));
+    padding-top: env(safe-area-inset-top);
+    padding-right: env(safe-area-inset-right);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
   }
 
-  @media (width >= 1080px) {
-    .app-shell {
-      padding-top: max(1.25rem, env(safe-area-inset-top));
-      padding-right: max(1.5rem, env(safe-area-inset-right));
-      padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
-      padding-left: max(1.5rem, env(safe-area-inset-left));
-    }
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+
+  .soft-scrollbar {
+    scrollbar-color: color-mix(in srgb, var(--color-graphite) 24%, transparent) transparent;
+    scrollbar-width: thin;
+  }
+
+  .text-balance {
+    text-wrap: balance;
   }
 
   .rule-course {
@@ -144,7 +168,7 @@
 
   .rule-animate {
     transform-origin: top;
-    animation: rule-draw-down 320ms ease-out forwards;
+    animation: rule-draw-down 520ms cubic-bezier(0.32, 0.72, 0, 1) forwards;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -181,7 +205,7 @@
   }
 
   .answer-fade {
-    animation: answer-fade-in 320ms ease-out forwards;
+    animation: answer-fade-in 620ms cubic-bezier(0.32, 0.72, 0, 1) forwards;
   }
 
   @keyframes evidence-tint {
@@ -205,13 +229,57 @@
     inset: 0;
     background-color: color-mix(in srgb, var(--color-mark) 12%, transparent);
     pointer-events: none;
-    animation: evidence-tint 1.2s ease-out forwards;
+    animation: evidence-tint 1.2s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+  }
+
+  @keyframes float-in {
+    from {
+      opacity: 0;
+      transform: translateY(18px) scale(0.985);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  .float-in {
+    animation: float-in 720ms cubic-bezier(0.32, 0.72, 0, 1) both;
+  }
+
+  @keyframes drawer-in {
+    from {
+      opacity: 0;
+      transform: translateX(-1.5rem);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  .drawer-in {
+    animation: drawer-in 520ms cubic-bezier(0.32, 0.72, 0, 1) both;
+  }
+
+  .composer-glow {
+    box-shadow:
+      0 1px 2px rgb(24 31 28 / 0.04),
+      0 18px 48px rgb(34 58 50 / 0.08),
+      inset 0 1px 0 rgb(255 255 255 / 0.82);
   }
 
   @media (prefers-reduced-motion: reduce) {
     .answer-fade {
       animation: none;
       opacity: 1;
+    }
+
+    .drawer-in,
+    .float-in {
+      animation: none;
+      opacity: 1;
+      transform: none;
     }
 
     .evidence-flash::after {

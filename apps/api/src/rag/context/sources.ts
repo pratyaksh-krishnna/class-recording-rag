@@ -58,6 +58,7 @@ function buildSourceFields(sourceId: string, fields: SourceFields): Source {
     startMs: fields.startMs,
     endMs: fields.endMs,
     excerpt: excerpt(fields.text),
+    content: fields.text,
   };
 }
 

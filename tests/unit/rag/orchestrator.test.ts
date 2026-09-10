@@ -1,10 +1,16 @@
 import { test, expect, describe, beforeEach } from 'bun:test';
 import type { RagConfig } from '../../../apps/api/src/config/rag';
-import { answerQuestion, type OrchestratorDeps } from '../../../apps/api/src/rag/orchestrator';
+import {
+  answerQuestion,
+  deriveThreadTitle,
+  MAX_THREAD_TITLE_LENGTH,
+  type OrchestratorDeps,
+} from '../../../apps/api/src/rag/orchestrator';
 import { createScriptedLLMProvider, scriptedError } from '../../../apps/api/src/providers/llm/scripted.mock';
 import { createDeterministicEmbeddingProvider } from '../../../apps/api/src/providers/embedding/deterministic.mock';
 import { createTokenizer } from '../../../apps/api/src/ingestion/tokenizer/tokenizer';
 import { AppError, isAppError } from '../../../apps/api/src/errors/AppError';
+import { conversations } from '../../../apps/api/src/db/schema';
 import { createFakeDatabase, type ExecuteRoute } from '../../helpers/fakeDatabase';
 
 // ---------------------------------------------------------------------------
@@ -121,7 +127,45 @@ beforeEach(() => {
   retrievalShouldFail = false;
 });
 
+describe('deriveThreadTitle', () => {
+  test('trims and collapses whitespace', () => {
+    expect(deriveThreadTitle('  How   does\nnormalization\twork?  ')).toBe('How does normalization work?');
+  });
+
+  test('truncates long questions at a word boundary with an ellipsis', () => {
+    const title = deriveThreadTitle(
+      'Explain how database normalization reduces duplication while preserving data integrity across related tables',
+    );
+
+    expect(title).toBe('Explain how database normalization reduces duplication while preserving…');
+    expect(title.length).toBeLessThanOrEqual(MAX_THREAD_TITLE_LENGTH);
+  });
+});
+
 describe('answerQuestion', () => {
+  test('a new conversation uses the first question as its title', async () => {
+    const { db, rowsOf } = createFakeDatabase({ executeRoutes: executeRoutes() });
+    const provider = createScriptedLLMProvider({
+      query_plan: [QUERY_PLAN],
+      evidence_assessment: [SUFFICIENT_JUDGE],
+      answer: [VALID_ANSWER],
+    });
+
+    await answerQuestion(
+      {
+        db,
+        llm: provider,
+        embeddings: createDeterministicEmbeddingProvider(),
+        config: ragConfig(),
+        tokenizer: createTokenizer('o200k_base'),
+      },
+      baseInput({ question: '  What   is\nnormalization?  ' }),
+    );
+
+    expect(rowsOf(conversations)).toHaveLength(1);
+    expect(rowsOf(conversations)[0]?.title).toBe('What is normalization?');
+  });
+
   test('happy path returns a contract-shaped ChatResponse', async () => {
     const provider = createScriptedLLMProvider({
       query_plan: [QUERY_PLAN],
@@ -153,7 +197,7 @@ describe('answerQuestion', () => {
   });
 
   test('a follow-up turn with history DOES call the contextualizer', async () => {
-    const { db } = createFakeDatabase({ executeRoutes: executeRoutes() });
+    const { db, rowsOf } = createFakeDatabase({ executeRoutes: executeRoutes() });
     const orchestratorDeps: OrchestratorDeps = {
       db,
       llm: createScriptedLLMProvider({}),
@@ -183,6 +227,7 @@ describe('answerQuestion', () => {
     );
 
     expect(secondProvider.calls.some((c) => c.schemaName === 'contextualized_query')).toBe(true);
+    expect(rowsOf(conversations)[0]?.title).toBe('What is normalization?');
   });
 
   test('diagnostics present only when config.features.diagnosticsEnabled is true', async () => {

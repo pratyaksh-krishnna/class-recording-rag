@@ -142,6 +142,24 @@ describeDb('conversations repository', () => {
       expect(afterTouch.map((c) => c.id)).toEqual([first.id, second.id]);
       expect(afterTouch.every((c) => c.userId === userId)).toBe(true);
     });
+
+    test('includes the first user question for legacy null-title fallback', async () => {
+      const userId = 'legacy-title-list-user';
+      const conversation = await createConversation(db, { cohortId, userId, title: null });
+      await appendMessage(db, { conversationId: conversation.id, role: 'assistant', content: 'Assistant preface' });
+      await appendMessage(db, {
+        conversationId: conversation.id,
+        role: 'user',
+        content: '  How   does\nnormalization work?  ',
+      });
+      await appendMessage(db, { conversationId: conversation.id, role: 'user', content: 'Second question' });
+
+      const listed = await listConversations(db, { userId, cohortId });
+
+      expect(listed).toHaveLength(1);
+      expect(listed[0]?.title).toBeNull();
+      expect(listed[0]?.firstUserQuestion).toBe('  How   does\nnormalization work?  ');
+    });
   });
 
   describe('appendMessage / listMessages', () => {

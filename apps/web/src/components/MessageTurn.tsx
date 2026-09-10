@@ -1,10 +1,10 @@
+import { ArrowCounterClockwise, WarningCircle } from '@phosphor-icons/react';
 import type { ReactElement } from 'react';
 import type { Turn } from '../hooks/useChat';
 import { AnswerWithCitations } from './AnswerWithCitations';
 import { evidenceElementId } from './EvidenceEntry';
 import { EvidenceRail } from './EvidenceRail';
 import { GroundingBadge } from './GroundingBadge';
-import { getGroundingPresentation } from '../lib/grounding';
 import { PipelineProgress } from './PipelineProgress';
 
 interface MessageTurnProps {
@@ -21,7 +21,11 @@ function revealEvidence(turnId: string, sourceId: string): void {
   }
 
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  el.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+  el.scrollIntoView({
+    behavior: reduceMotion ? 'auto' : 'smooth',
+    block: 'nearest',
+    inline: 'center',
+  });
   el.focus({ preventScroll: true });
   el.classList.remove('evidence-flash');
   void el.offsetWidth;
@@ -38,13 +42,12 @@ export function MessageTurn({
   onRetry,
 }: MessageTurnProps): ReactElement {
   return (
-    <article className="min-w-0">
-      <h2 className="max-w-[66ch] break-words font-reading text-xl leading-snug text-ink text-pretty">
+    <article className="min-w-0 border-b border-rule/70 pb-12 last:border-b-0 last:pb-4 md:pb-16">
+      <h2 className="max-w-[34ch] break-words font-ui text-[clamp(1.35rem,3vw,2rem)] font-semibold leading-[1.22] tracking-[-0.025em] text-ink text-pretty">
         {question.text}
       </h2>
       {follow ? (
-        <div className="mt-6 grid grid-cols-1 gap-8 split:grid-cols-[minmax(0,1fr)_minmax(var(--spacing-rail-min),var(--spacing-rail-max))] split:gap-[var(--spacing-gap)]">
-          <FollowBody follow={follow} animate={animate} onRetry={onRetry} />
+        <div className="mt-7 min-w-0 space-y-6">
           {follow.kind === 'answer' ? (
             <EvidenceRail
               turnId={follow.id}
@@ -52,6 +55,7 @@ export function MessageTurn({
               emphasize={follow.response.groundingStatus === 'conflicting'}
             />
           ) : null}
+          <FollowBody follow={follow} animate={animate} onRetry={onRetry} />
         </div>
       ) : null}
     </article>
@@ -68,25 +72,35 @@ function FollowBody({
   onRetry: () => void;
 }): ReactElement {
   if (follow.kind === 'pending') {
-    return (
-      <div className="flex min-w-0 gap-4">
-        <div className="w-[3px] shrink-0 self-stretch bg-rule" aria-hidden="true" />
-        <PipelineProgress startedAt={follow.startedAt} />
-      </div>
-    );
+    return <PipelineProgress startedAt={follow.startedAt} />;
   }
 
   if (follow.kind === 'error') {
     return (
-      <div className="flex min-w-0 gap-4">
-        <div className="w-[3px] shrink-0 self-stretch bg-rule" aria-hidden="true" />
-        <div role="alert" className="min-w-0 max-w-[66ch]">
-          <p className="break-words font-ui text-sm text-ink">{follow.message}</p>
+      <div role="alert" className="max-w-[42rem] rounded-[1.15rem] bg-ground/40 p-1.5 ring-1 ring-ink/[0.06]">
+        <div className="rounded-[0.8rem] bg-page px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
+          <div className="flex items-start gap-3">
+            <WarningCircle
+              size={20}
+              weight="light"
+              className="mt-0.5 shrink-0 text-g-conflict"
+              aria-hidden="true"
+            />
+            <p className="min-w-0 break-words font-ui text-sm leading-relaxed text-ink">
+              {follow.message}
+            </p>
+          </div>
           <button
             type="button"
             onClick={onRetry}
-            className="mt-3 rounded-[3px] bg-mark px-3 py-2 font-ui text-sm font-medium text-page transition-[background-color,color,filter] duration-[120ms] hover:brightness-[0.92] active:brightness-[0.85]"
+            className="group mt-4 inline-flex items-center gap-2 rounded-full bg-ink px-4 py-2 font-ui text-xs font-semibold text-page transition-[transform,background-color] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-mark active:scale-[0.98]"
           >
+            <ArrowCounterClockwise
+              size={15}
+              weight="light"
+              className="transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:-rotate-45"
+              aria-hidden="true"
+            />
             {follow.retry ?? 'Try Again'}
           </button>
         </div>
@@ -94,32 +108,26 @@ function FollowBody({
     );
   }
 
-  const presentation = getGroundingPresentation(follow.response.groundingStatus);
-
   return (
-    <div className="flex min-w-0 gap-4">
-      <div
-        className={`w-[3px] shrink-0 self-stretch ${presentation.ruleClass}${animate ? ' rule-animate' : ''}`}
-        aria-hidden="true"
-      />
-      <div className={`min-w-0 flex-1${animate ? ' answer-fade' : ''}`}>
-        <GroundingBadge status={follow.response.groundingStatus} />
-        {follow.response.groundingStatus === 'general_knowledge' ? (
-          <p className="mb-3 font-ui text-sm text-g-general">The recordings don't cover this.</p>
-        ) : null}
-        {follow.response.answer.trim().length === 0 ? (
-          <p className="max-w-[66ch] font-reading text-base leading-[1.62] text-ink">
-            The answer came back empty. Ask again, or rephrase the question.
-          </p>
-        ) : (
-          <AnswerWithCitations
-            answerText={follow.response.answer}
-            sources={follow.response.sources}
-            turnId={follow.id}
-            onCitationActivate={(sourceId) => revealEvidence(follow.id, sourceId)}
-          />
-        )}
-      </div>
+    <div className={`min-w-0${animate ? ' answer-fade' : ''}`}>
+      <GroundingBadge status={follow.response.groundingStatus} />
+      {follow.response.groundingStatus === 'general_knowledge' ? (
+        <p className="mb-3 max-w-[66ch] font-ui text-xs leading-relaxed text-g-general">
+          The recordings don&apos;t cover this.
+        </p>
+      ) : null}
+      {follow.response.answer.trim().length === 0 ? (
+        <p className="max-w-[66ch] font-reading text-base leading-[1.7] text-ink">
+          The answer came back empty. Ask again, or rephrase the question.
+        </p>
+      ) : (
+        <AnswerWithCitations
+          answerText={follow.response.answer}
+          sources={follow.response.sources}
+          turnId={follow.id}
+          onCitationActivate={(sourceId) => revealEvidence(follow.id, sourceId)}
+        />
+      )}
     </div>
   );
 }

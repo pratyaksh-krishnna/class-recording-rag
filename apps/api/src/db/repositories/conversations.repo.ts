@@ -1,5 +1,5 @@
 import type { GroundingStatus, Source } from '@rag/shared';
-import { and, asc, desc, eq, inArray } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm';
 import { buildSource } from '../../rag/context/sources';
 import type { Database } from '../client';
 import { conversations, messageCitations, messages } from '../schema';
@@ -13,6 +13,10 @@ export interface ConversationRow {
   title: string | null;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface ConversationListRow extends ConversationRow {
+  firstUserQuestion: string | null;
 }
 
 export interface MessageRow {
@@ -37,6 +41,23 @@ const CONVERSATION_COLUMNS = {
   title: conversations.title,
   createdAt: conversations.createdAt,
   updatedAt: conversations.updatedAt,
+};
+
+const CONVERSATION_LIST_COLUMNS = {
+  ...CONVERSATION_COLUMNS,
+  // A scalar subquery keeps legacy-title fallback to one database round trip
+  // while the existing conversation/message indexes make each lookup cheap.
+  firstUserQuestion: sql<string | null>`CASE
+    WHEN ${conversations.title} IS NULL THEN (
+      SELECT ${messages.content}
+      FROM ${messages}
+      WHERE ${messages.conversationId} = ${sql.identifier('conversations')}.${sql.identifier('id')}
+        AND ${messages.role} = 'user'
+      ORDER BY ${messages.createdAt} ASC, ${messages.id} ASC
+      LIMIT 1
+    )
+    ELSE NULL
+  END`.as('first_user_question'),
 };
 
 const MESSAGE_COLUMNS = {
@@ -96,9 +117,9 @@ export async function listConversations(
   db: Database,
   scope: { userId: string; cohortId: string },
   limit = 50,
-): Promise<ConversationRow[]> {
+): Promise<ConversationListRow[]> {
   return db
-    .select(CONVERSATION_COLUMNS)
+    .select(CONVERSATION_LIST_COLUMNS)
     .from(conversations)
     .where(and(eq(conversations.userId, scope.userId), eq(conversations.cohortId, scope.cohortId)))
     .orderBy(desc(conversations.updatedAt))

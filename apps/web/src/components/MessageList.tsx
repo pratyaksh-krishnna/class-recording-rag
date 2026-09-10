@@ -39,7 +39,7 @@ export function MessageList({
   const groups = groupTurns(turns);
 
   return (
-    <div className="flex flex-col gap-16">
+    <div className="mx-auto flex w-full max-w-[56rem] flex-col gap-12 pb-4 md:gap-16">
       {groups.map((group) => (
         <MessageTurn
           key={group.question.id}

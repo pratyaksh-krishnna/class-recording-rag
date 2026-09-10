@@ -1,3 +1,4 @@
+import { PlayCircle } from '@phosphor-icons/react';
 import type { Source } from '@rag/shared';
 import { type ReactElement, type ReactNode } from 'react';
 import { parseAnswer, type Segment } from '../lib/answer';
@@ -25,7 +26,7 @@ export function AnswerWithCitations({
   }
 
   return (
-    <div className="max-w-[66ch] font-reading text-base leading-[1.62] text-pretty text-ink break-words">
+    <div className="max-w-[68ch] break-words font-reading text-base leading-[1.72] text-ink text-pretty">
       <SegmentFlow
         segments={segments}
         turnId={turnId}
@@ -53,7 +54,7 @@ function SegmentFlow({
       return;
     }
     nodes.push(
-      <p key={`p-${paraKey}`} className={paraKey > 0 ? 'mt-3' : undefined}>
+      <p key={`p-${paraKey}`} className={paraKey > 0 ? 'mt-4' : undefined}>
         {inline}
       </p>,
     );
@@ -122,8 +123,14 @@ function CitationButton({
       aria-controls={targetId}
       translate="no"
       onClick={() => onActivate(source.id)}
-      className="mx-0.5 inline font-ui text-xs font-medium tabular-nums text-mark underline decoration-mark underline-offset-2 transition-[color] duration-[120ms] hover:text-ink"
+      className="group relative -top-px mx-1 inline-flex items-center gap-1 rounded-full bg-mark/[0.08] px-1.5 py-0.5 font-ui text-[0.7rem] font-semibold tabular-nums leading-none text-mark ring-1 ring-mark/15 transition-[transform,background-color,color] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-px hover:bg-mark hover:text-page active:translate-y-0"
     >
+      <PlayCircle
+        size={12}
+        weight="light"
+        className="transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:scale-110"
+        aria-hidden="true"
+      />
       {timecode}
     </button>
   );

@@ -24,6 +24,8 @@ export interface Source {
   endMs: number;
   /** Short transcript snippet for the evidence card (spec §28). */
   excerpt: string;
+  /** Full retrieved chunk for the source viewer. Optional for older API clients. */
+  content?: string;
 }
 
 export interface ChatRequest {
